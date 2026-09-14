@@ -93,6 +93,16 @@ chat.example.com {
 
 测试使用模拟钱包、业务服务或隔离网络，不向生产发消息或提交交易。真实钱包内置浏览器的签名、付费/审核入群、实际节点双向消息、手机键盘、后台恢复及存储限制仍需真机验收；这些不得据本地测试标记为已通过。
 
-2026-09-14 本地结果：类型检查通过；相关 11 个测试文件共 59 项通过；3 种视口共 9 项浏览器检查通过（含跨域设备签名登录和身份存储隔离）；正式网页构建、跨平台安全配置与生产 mock 边界检查通过。已人工检查 360px 小屏截图。未部署生产，也未完成真实钱包/真实群节点联调。
+2026-09-14 本地结果：类型检查通过；相关 11 个测试文件共 59 项通过；3 种视口共 9 项浏览器检查通过（含跨域设备签名登录和身份存储隔离）；正式网页构建、跨平台安全配置与生产 mock 边界检查通过。已人工检查 360px 小屏截图。此处记录本地验收结果；真实钱包/真实群节点联调尚未完成。
 
 GitHub Pages 子目录构建使用 `GPC_WEB_BASE_PATH=/chat-widget`，上传到 `gpcchat/gpcchat.github.io` 的 `chat-widget/` 目录；保留根目录已有 DApp 与 gpcapp 网站。根目录 demo.html 由 public/chat-widget/demo.html 复制并将脚本路径改为 ./chat-widget.js。
+
+## GitHub Pages 发布记录（2026-09-14）
+
+已发布到 `gpcchat/gpcchat.github.io` 的 main 分支。功能部署提交为 `cc8417e50955aae86e78aecb67b6223d20747d80`，源码已推送到私有仓库 `gpcchat/gpcwallet` 的 `codex/chat-widget-20260914` 分支。
+
+- 示例：https://gpcchat.github.io/chat-widget/demo.html
+- SDK：https://gpcchat.github.io/chat-widget/chat-widget.js
+- 接入说明：https://gpcchat.github.io/chat-widget/INTEGRATION.md
+
+GitHub Pages 返回 built；已验证线上 SDK 内容与源码完全一致、线上示例与下载横幅可见、不同来源的页面可以加载线上 SDK 并将请求转发到模拟宿主钱包，原有首页内容与发布前一致。此次线上验证没有连接真实用户钱包、加入真实群或发送生产消息。
