@@ -1,6 +1,21 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GPC 群聊接入示例</title><style>body{font:16px/1.7 system-ui;background:#f4f7f5;color:#183c2a;margin:0;padding:32px}main{max-width:700px;margin:auto}input{box-sizing:border-box;width:100%;padding:14px;border:1px solid #abc2b3;border-radius:8px}button{padding:12px 20px;background:#176447;color:white;border:0;border-radius:8px;margin-top:16px;cursor:pointer}pre{white-space:pre-wrap;background:white;padding:20px;border-radius:12px}#status{color:#a33}</style></head><body><main><h1>把项目群聊放进 DApp</h1><p>输入已有 GPC 群地址，加载右下角的聊天入口。连接与签名由当前钱包完成，项目方可在加载前执行自己的合约资格判断。</p><label for="group">群地址</label><input id="group" placeholder="0x…" autocomplete="off"><button id="mount">加载群聊</button><p id="status" role="alert"></p><pre>const chat = GPCChat.init({
-  groupId: '0x群地址',
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GPC 群聊接入示例</title><style>
+body{font:16px/1.7 system-ui;background:#f4f7f5;color:#183c2a;margin:0;padding:24px}main{max-width:700px;margin:auto}input{box-sizing:border-box;width:100%;padding:14px;border:1px solid #abc2b3;border-radius:8px}button{padding:12px 20px;background:#176447;color:white;border:0;border-radius:8px;margin-top:16px;cursor:pointer}pre{white-space:pre-wrap;background:white;padding:20px;border-radius:12px}.wallet{background:#e0efe5;border:1px solid #adc8b6;padding:16px;border-radius:12px;margin:24px 0}.wallet strong{display:block}.wallet code{overflow-wrap:anywhere;font-size:13px}.note{color:#537561;font-size:14px}#status{color:#a33}
+</style></head><body><main><h1>项目 DApp · 群聊演示</h1><p>读取项目 DApp 当前已连接的钱包，把同一个钱包对象传给悬浮聊天组件。</p><div class="wallet"><strong id="wallet-status">正在读取钱包连接状态…</strong><code id="account"></code><div class="note">使用当前浏览器钱包账户</div></div><label for="group">群地址</label><input id="group" autocomplete="off"><button id="connect">连接钱包</button> <button id="mount" disabled>打开群聊</button><p id="status" role="alert"></p><p class="note">已连接钱包会直接复用；首次使用聊天仍需签名登录。输入真实群地址后，消息会发送到该群。</p><pre>const chat = GPCChat.init({
+  groupId: '0x真实群地址',
   provider: connectedWalletProvider,
 });
-chat.open();
-// 离开页面或资格失效时：chat.destroy();</pre><p>该示例不会自动发起交易。入群可能需要矿工费或群设置的费用，请核对钱包确认内容。</p></main><script src="./chat-widget.js"></script><script>document.getElementById('group').value=new URLSearchParams(location.search).get('groupId')||'';document.getElementById('mount').onclick=function(){try{GPCChat.init({groupId:document.getElementById('group').value.trim(),provider:window.ethereum}).open();document.getElementById('status').textContent=''}catch(error){document.getElementById('status').textContent=error.message}};</script></body></html>
+chat.open();</pre><p class="note">入群按该群实际规则执行。</p></main><script src="./chat-widget.js"></script><script>
+(function(){
+ let provider=null,account='';
+ const status=document.getElementById('status'),walletStatus=document.getElementById('wallet-status'),connect=document.getElementById('connect'),mount=document.getElementById('mount');
+ document.getElementById('group').value=new URLSearchParams(location.search).get('groupId')||'';
+ document.getElementById('group').placeholder='0x真实群地址';
+ function selected(accounts){const next=Array.isArray(accounts)?accounts[0]||'':'';if(account&&next.toLowerCase()!==account.toLowerCase())GPCChat.destroy();account=next;document.getElementById('account').textContent=account||'尚未连接';walletStatus.textContent=account?'● 钱包已连接':'钱包未连接';connect.hidden=Boolean(account);mount.disabled=!account}
+ async function read(request){try{provider=window.ethereum;if(!provider||!provider.request)throw new Error('未检测到钱包，请在钱包浏览器中打开');selected(await provider.request({method:request?'eth_requestAccounts':'eth_accounts'}));status.textContent=''}catch(error){selected([]);status.textContent=error.message}}
+ connect.onclick=function(){read(true)};
+ mount.onclick=async function(){try{if(!provider)throw new Error('请先连接钱包');selected(await provider.request({method:'eth_accounts'}));if(!account)throw new Error('钱包已断开，请重新连接');GPCChat.init({groupId:document.getElementById('group').value.trim(),provider:provider}).open();status.textContent=''}catch(error){status.textContent=error.message}};
+ read(false);
+ if(window.ethereum&&window.ethereum.on){window.ethereum.on('accountsChanged',selected);window.ethereum.on('disconnect',function(){selected([])});}
+})();
+</script></body></html>
