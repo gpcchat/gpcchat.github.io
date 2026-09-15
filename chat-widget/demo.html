@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GPC 群聊接入示例</title><style>
 body{font:16px/1.7 system-ui;background:#f4f7f5;color:#183c2a;margin:0;padding:24px}main{max-width:700px;margin:auto}input{box-sizing:border-box;width:100%;padding:14px;border:1px solid #abc2b3;border-radius:8px}button{padding:12px 20px;background:#176447;color:white;border:0;border-radius:8px;margin-top:16px;cursor:pointer}pre{white-space:pre-wrap;background:white;padding:20px;border-radius:12px}.wallet{background:#e0efe5;border:1px solid #adc8b6;padding:16px;border-radius:12px;margin:24px 0}.wallet strong{display:block}.wallet code{overflow-wrap:anywhere;font-size:13px}.note{color:#537561;font-size:14px}#status{color:#a33}
-</style></head><body><main><h1>项目 DApp · 群聊演示</h1><p>读取项目 DApp 当前已连接的钱包，把同一个钱包对象传给悬浮聊天组件。</p><div class="wallet"><strong id="wallet-status">正在读取钱包连接状态…</strong><code id="account"></code><div class="note">使用当前浏览器钱包账户</div></div><label for="group">群地址</label><input id="group" autocomplete="off"><button id="connect">连接钱包</button> <button id="mount" disabled>打开群聊</button><p id="status" role="alert"></p><p class="note">已连接钱包会直接复用；首次使用聊天仍需签名登录。输入真实群地址后，消息会发送到该群。</p><pre>const chat = GPCChat.init({
+</style></head><body><main><h1>项目 DApp · 群聊演示</h1><p>读取项目 DApp 当前已连接的钱包，把同一个钱包对象传给悬浮聊天组件。</p><div class="wallet"><strong id="wallet-status">正在读取钱包连接状态…</strong><code id="account"></code><div class="note">使用当前浏览器钱包账户</div></div><label for="group">群地址</label><input id="group" autocomplete="off"><button id="connect">连接钱包</button> <button id="mount" disabled>打开群聊</button><p id="status" role="alert"></p><p class="note">已连接钱包会直接复用；打开聊天会自动登录，首次授权时请在钱包中确认签名。输入真实群地址后，消息会发送到该群。</p><pre>const chat = GPCChat.init({
   groupId: '0x真实群地址',
   provider: connectedWalletProvider,
 });
-chat.open();</pre><p class="note">入群按该群实际规则执行。</p></main><script src="./chat-widget.js"></script><script>
+chat.open();</pre><p class="note">入群按该群实际规则执行。</p></main><script src="./chat-widget.js?v=20260915-h5"></script><script>
 (function(){
  let provider=null,account='';
  const status=document.getElementById('status'),walletStatus=document.getElementById('wallet-status'),connect=document.getElementById('connect'),mount=document.getElementById('mount');

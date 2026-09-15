@@ -17,6 +17,12 @@
     var shadow = root.attachShadow({ mode: 'open' });
     var style = document.createElement('style');
     style.textContent = ':host{all:initial;position:fixed;z-index:2147483000;bottom:max(16px,env(safe-area-inset-bottom));right:16px;font-family:system-ui,sans-serif}button{cursor:pointer;font:600 14px system-ui;border:0;color:white;background:#176447;border-radius:28px;padding:16px 20px;box-shadow:0 4px 22px #0003}button:focus-visible{outline:3px solid #59d9a8;outline-offset:3px}.panel{position:absolute;bottom:64px;right:0;width:min(400px,calc(100vw - 24px));height:min(620px,calc(100dvh - 112px));background:#101b18;border:1px solid #496057;border-radius:18px;overflow:hidden;box-shadow:0 16px 48px #0004}.panel[hidden]{display:none}iframe{border:0;width:100%;height:100%;display:block}.loading{position:absolute;inset:0;display:grid;place-content:center;color:white;font:14px system-ui;pointer-events:none}';
+    style.textContent += '@media(max-width:600px){:host{right:12px;bottom:max(12px,env(safe-area-inset-bottom))}.panel{position:fixed;left:8px!important;right:8px!important;top:calc(var(--gpc-viewport-top,0px) + 8px);bottom:auto;width:auto;height:calc(var(--gpc-viewport-height,100dvh) - 16px);border-radius:16px}:host([data-open="true"])>button{display:none}}';
+    var viewport = window.visualViewport;
+    function resizeViewport() { root.style.setProperty('--gpc-viewport-height', (viewport ? viewport.height : window.innerHeight) + 'px'); root.style.setProperty('--gpc-viewport-top', (viewport ? viewport.offsetTop : 0) + 'px'); }
+    resizeViewport();
+    if (viewport) { viewport.addEventListener('resize', resizeViewport); viewport.addEventListener('scroll', resizeViewport); }
+    window.addEventListener('resize', resizeViewport);
     var bubble = document.createElement('button');
     bubble.type = 'button'; bubble.textContent = '群聊'; bubble.setAttribute('aria-label', '打开群聊'); bubble.setAttribute('aria-expanded', 'false');
     var panel = document.createElement('div'); panel.className = 'panel'; panel.hidden = true;
@@ -38,8 +44,8 @@
       frame.src = url.href;
       loadTimer = setTimeout(function () { if (!ready) { loading.textContent = '加载失败，请收起后重新打开'; loaded = false; } }, 45000);
     }
-    function open() { if (destroyed) return; opened = true; panel.hidden = false; bubble.textContent = '收起群聊'; bubble.setAttribute('aria-expanded', 'true'); bubble.setAttribute('aria-label', '收起群聊'); if (!loaded) load(); post('visibility', { visible: true }); }
-    function minimize() { if (destroyed) return; opened = false; panel.hidden = true; bubble.textContent = '群聊'; bubble.setAttribute('aria-expanded', 'false'); bubble.setAttribute('aria-label', '打开群聊'); post('visibility', { visible: false }); bubble.focus(); }
+    function open() { if (destroyed) return; opened = true; root.setAttribute('data-open', 'true'); resizeViewport(); panel.hidden = false; bubble.textContent = '收起群聊'; bubble.setAttribute('aria-expanded', 'true'); bubble.setAttribute('aria-label', '收起群聊'); if (!loaded) load(); post('visibility', { visible: true }); }
+    function minimize() { if (destroyed) return; opened = false; root.setAttribute('data-open', 'false'); panel.hidden = true; bubble.textContent = '群聊'; bubble.setAttribute('aria-expanded', 'false'); bubble.setAttribute('aria-label', '打开群聊'); post('visibility', { visible: false }); bubble.focus(); }
     bubble.onclick = function () { if (opened) minimize(); else open(); };
     function reset() { bubble.textContent = opened ? '收起群聊' : '群聊'; if (loaded) load(); }
     async function receive(event) {
@@ -62,7 +68,7 @@
     }
     window.addEventListener('message', receive);
     ['accountsChanged', 'chainChanged', 'disconnect'].forEach(function (event) { if (provider && provider.on) provider.on(event, reset); });
-    function destroy() { if (destroyed) return; destroyed = true; clearTimeout(loadTimer); window.removeEventListener('message', receive); ['accountsChanged', 'chainChanged', 'disconnect'].forEach(function (event) { if (provider && provider.removeListener) provider.removeListener(event, reset); }); frame.src = 'about:blank'; root.remove(); if (active === api) active = null; }
+    function destroy() { if (destroyed) return; destroyed = true; window.removeEventListener('resize', resizeViewport); if (viewport) { viewport.removeEventListener('resize', resizeViewport); viewport.removeEventListener('scroll', resizeViewport); } clearTimeout(loadTimer); window.removeEventListener('message', receive); ['accountsChanged', 'chainChanged', 'disconnect'].forEach(function (event) { if (provider && provider.removeListener) provider.removeListener(event, reset); }); frame.src = 'about:blank'; root.remove(); if (active === api) active = null; }
     var api = { open: open, minimize: minimize, destroy: destroy };
     active = api;
     return api;
