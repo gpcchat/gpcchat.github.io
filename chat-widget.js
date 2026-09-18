@@ -11,6 +11,8 @@
     var base = options.chatUrl ? new URL(options.chatUrl, location.href) : new URL('./', scriptUrl);
     if (base.protocol !== 'https:' && !(base.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(base.hostname))) throw new Error('GPCChat: chatUrl must use HTTPS');
     if (active) active.destroy();
+    var theme = {};
+    'background headerBackground text secondaryText primary primaryText border messageBackground messageText ownMessageBackground ownMessageText inputBackground inputText placeholder bannerBackground bannerText bannerButtonBackground bannerButtonText link errorBackground errorText noticeText'.split(' ').forEach(function (key) { var value = options.theme && options.theme[key]; if (typeof value === 'string' && /^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value)) theme[key] = value; });
     var provider = options.provider || window.ethereum;
     var root = document.createElement('div');
     root.setAttribute('data-gpc-chat', '');
@@ -28,10 +30,10 @@
     if (typeof options.buttonColor === 'string' && CSS.supports('color', options.buttonColor)) bubble.style.backgroundColor = options.buttonColor;
     if (typeof options.buttonTextColor === 'string' && CSS.supports('color', options.buttonTextColor)) bubble.style.color = options.buttonTextColor;
     bubble.type = 'button'; bubble.textContent = '群聊'; bubble.setAttribute('aria-label', '打开群聊'); bubble.setAttribute('aria-expanded', 'false');
-    var panel = document.createElement('div'); panel.className = 'panel'; panel.hidden = true;
+    var panel = document.createElement('div'); panel.className = 'panel'; if (theme.background) panel.style.backgroundColor = theme.background; if (theme.border) panel.style.borderColor = theme.border; panel.hidden = true;
     var frame = document.createElement('iframe'); frame.title = 'GPC 指定群聊'; frame.referrerPolicy = 'no-referrer';
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
-    var loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = '正在加载群聊…';
+    var loading = document.createElement('div'); loading.className = 'loading'; if (theme.text) loading.style.color = theme.text; loading.textContent = '正在加载群聊…';
     panel.append(frame, loading); shadow.append(style, panel, bubble);
     if (options.position === 'bottom-left') { root.style.left = '16px'; root.style.right = 'auto'; panel.style.left = '0'; panel.style.right = 'auto'; }
     (document.body || document.documentElement).appendChild(root);
@@ -41,6 +43,7 @@
       clearTimeout(loadTimer); ready = false; rpcBusy = false; loaded = true;
       session = crypto.randomUUID();
       var url = new URL(base.href); url.search = ''; url.hash = '';
+      if (Object.keys(theme).length) url.searchParams.set('theme', JSON.stringify(theme));
       url.searchParams.set('gpcChatEmbed', '1'); url.searchParams.set('groupId', options.groupId);
       url.searchParams.set('parentOrigin', location.origin); url.searchParams.set('session', session);
       frame.style.visibility = 'hidden'; loading.hidden = false; loading.style.display = ''; loading.textContent = '正在加载群聊…';

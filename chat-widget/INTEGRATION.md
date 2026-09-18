@@ -123,3 +123,42 @@ GPCChat.init({
 ```
 
 `buttonColor` 设置悬浮按钮背景色，`buttonTextColor` 设置文字颜色，支持浏览器识别的 CSS 颜色值。两项均可省略，默认沿用绿色 `#176447` 和白色文字；无效颜色保留默认值。颜色只作用于悬浮按钮，不改变聊天面板与下载横幅。已有接入代码无需调整。
+
+## 自定义聊天窗口主题
+
+SDK 新增 `theme`，以下为浅色蓝色主题示例：
+
+```js
+GPCChat.init({
+  groupId: '0x真实群地址',
+  provider: window.ethereum,
+  buttonColor: '#2563eb',
+  buttonTextColor: '#ffffff',
+  theme: {
+    background: '#ffffff',
+    headerBackground: '#eff6ff',
+    text: '#172554',
+    secondaryText: '#64748b',
+    primary: '#2563eb',
+    primaryText: '#ffffff',
+    border: '#dbeafe',
+    messageBackground: '#f1f5f9',
+    messageText: '#172554',
+    ownMessageBackground: '#dbeafe',
+    ownMessageText: '#172554',
+    inputBackground: '#f1f5f9',
+    inputText: '#172554',
+    placeholder: '#64748b',
+    bannerBackground: '#dbeafe',
+    bannerText: '#1e40af',
+    bannerButtonBackground: '#2563eb',
+    bannerButtonText: '#ffffff',
+    link: '#2563eb',
+    errorBackground: '#fee2e2',
+    errorText: '#991b1b',
+    noticeText: '#92400e',
+  },
+});
+```
+
+所有字段可选，仅接受十六进制颜色 `#RGB`、`#RGBA`、`#RRGGBB`、`#RRGGBBAA`；无效值及未知字段会忽略。`primary/primaryText` 用于登录、入群和发送按钮；`message*` 为其他成员消息，`ownMessage*` 为本人消息。主题作用于嵌入聊天页和加载面板，不修改宿主 DApp，也不修改钱包或交易确认界面。调用方应成对设置背景与文字颜色以保持可读性。不传 theme 时保留原配色；不影响自动登录、群权限及消息内容。
