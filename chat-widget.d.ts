@@ -8,6 +8,10 @@ export interface ChatWidgetOptions {
   groupId: string;
   /** Pass the provider already selected by your DApp. Defaults to window.ethereum. */
   provider?: ChatWalletProvider;
+  /** Floating button background CSS color. Defaults to #176447. */
+  buttonColor?: string;
+  /** Floating button label CSS color. Defaults to white. */
+  buttonTextColor?: string;
   position?: 'bottom-right' | 'bottom-left';
   /** Hosted GPC web build root. Defaults to the directory containing chat-widget.js. */
   chatUrl?: string;

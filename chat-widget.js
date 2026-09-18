@@ -24,6 +24,9 @@
     if (viewport) { viewport.addEventListener('resize', resizeViewport); viewport.addEventListener('scroll', resizeViewport); }
     window.addEventListener('resize', resizeViewport);
     var bubble = document.createElement('button');
+    // Assign individual CSS properties: invalid values retain the defaults.
+    if (typeof options.buttonColor === 'string' && CSS.supports('color', options.buttonColor)) bubble.style.backgroundColor = options.buttonColor;
+    if (typeof options.buttonTextColor === 'string' && CSS.supports('color', options.buttonTextColor)) bubble.style.color = options.buttonTextColor;
     bubble.type = 'button'; bubble.textContent = '群聊'; bubble.setAttribute('aria-label', '打开群聊'); bubble.setAttribute('aria-expanded', 'false');
     var panel = document.createElement('div'); panel.className = 'panel'; panel.hidden = true;
     var frame = document.createElement('iframe'); frame.title = 'GPC 指定群聊'; frame.referrerPolicy = 'no-referrer';
