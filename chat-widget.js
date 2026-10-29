@@ -3,7 +3,22 @@
   'use strict';
   var scriptUrl = document.currentScript && document.currentScript.src;
   var active = null;
-  var allowed = new Set(['eth_accounts', 'eth_requestAccounts', 'eth_chainId', 'net_version', 'personal_sign', 'wallet_switchEthereumChain', 'wallet_addEthereumChain', 'eth_sendTransaction', 'eth_estimateGas', 'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'eth_blockNumber', 'eth_call', 'eth_getBalance', 'eth_getTransactionCount', 'eth_gasPrice', 'eth_maxPriorityFeePerGas']);
+  // Keep the read-only entries aligned with BSC_READ_RPC_METHODS in
+  // src/services/rpcRequestPolicy.ts. The embedded app uses that same policy
+  // for contract validation, normal reads and transaction preparation.
+  var allowed = new Set([
+    'eth_accounts', 'eth_requestAccounts', 'personal_sign',
+    'wallet_switchEthereumChain', 'wallet_addEthereumChain', 'eth_sendTransaction',
+    'eth_blockNumber', 'eth_call', 'eth_chainId', 'eth_estimateGas',
+    'eth_feeHistory', 'eth_gasPrice', 'eth_getBalance', 'eth_getBlockByHash',
+    'eth_getBlockByNumber', 'eth_getBlockTransactionCountByHash',
+    'eth_getBlockTransactionCountByNumber', 'eth_getCode', 'eth_getLogs',
+    'eth_getStorageAt', 'eth_getTransactionByBlockHashAndIndex',
+    'eth_getTransactionByBlockNumberAndIndex', 'eth_getTransactionByHash',
+    'eth_getTransactionCount', 'eth_getTransactionReceipt',
+    'eth_maxPriorityFeePerGas', 'eth_syncing', 'net_listening', 'net_peerCount',
+    'net_version', 'web3_clientVersion',
+  ]);
   function init(options) {
     options = options || {};
     if (!/^0x[0-9a-fA-F]{40}$/.test(options.groupId || '') || /^0x0{40}$/i.test(options.groupId)) throw new Error('GPCChat: invalid group address');
