@@ -1,0 +1,224 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GPC 插件市场 · 开发者文档</title><style>body{margin:0;background:#f5f7fa;color:#182a3a;font:16px/1.75 system-ui}main{max-width:960px;margin:auto;padding:36px 20px}h1,h2,h3{line-height:1.3;margin-top:2em}a{color:#176447}pre{background:#142331;color:#e8f3f8;padding:20px;border-radius:12px;overflow:auto}code{font-size:13px}table{display:block;overflow:auto;border-collapse:collapse}td,th{padding:10px;border:1px solid #dbe3e8;text-align:left}nav{display:flex;gap:18px;flex-wrap:wrap}h1{font-size:36px}</style><main><nav><a href="gpc-plugin-sdk.tgz">下载 SDK</a><a href="plugin-market-openapi.json">OpenAPI JSON</a><a href="examples/plugin-vote/index.html">示例页面</a><a href="https://api.gpcchat.com/console/plugin-developer">开发者中心</a></nav><h1 id="gpc-插件市场接入指南">GPC 插件市场接入指南</h1>
+<p>插件以独立 HTTPS 网页和业务后端运行。开发者使用 GPC SDK 调用宿主能力；用户将已审核的版本安装到个人应用，群主或管理员将插件安装到群菜单或聊天工具栏。插件内容由开发者托管，GPC 审核版本声明并执行权限边界。</p>
+<h2 id="开发者中心与发布">开发者中心与发布</h2>
+<p>使用现有控制台账号登录 <code>/console/plugin-developer</code>，登记开发者名称、联系渠道并接受接入规范，然后创建插件。填写版本、名称、介绍、分类、图标、HTTPS 入口、隐私政策和支持地址，选择安装位置、必需权限、可选权限与屏幕方向，提交审核。</p>
+<p>版本使用 <code>主版本.次版本.修订号</code>，如 <code>1.2.3</code>。提交后的版本快照不可编辑，同一应用版本号不可重复。待审核和被拒绝版本不出现在公开市场。开发者可以查看审核意见、提交新版本、下架自己的应用、生成和撤销服务端密钥、设置事件回调、重试失败投递。</p>
+<p>管理员在 <code>/console/plugin-market</code> 查看版本声明，打开入口、隐私与支持页面，核对实际功能和权限后，通过并上架或填写原因拒绝。管理员可以推荐、下架、封禁和恢复应用。应用封禁不会因通过另一版本而自动解除。下架、封禁、审核和密钥变更保留审计记录。</p>
+<p>审核的是入口与权限等声明快照；远端网页由开发者运营，不等于 GPC 对远端每次文件更新做了代码完整性担保。更换入口、增减权限或改变重要行为应提交新版本。客户端始终以安装记录和实时授权限制宿主调用。</p>
+<h2 id="安装与授权">安装与授权</h2>
+<p>钱包发现页的“插件”提供搜索、分类、详情和已安装管理。群资料的“群插件”和群聊天工具栏提供群内入口。</p>
+<p>安装前展示开发者域名、版本、隐私政策、必需权限及可选权限。用户明确同意后才创建安装记录。群安装由服务端实时核对当前链上成员与管理角色；普通成员可以打开群已安装的插件，安装、更新或卸载需群主或管理员。个人安装只允许本人访问。</p>
+<p>安装固定到具体的已审核版本。市场发布更新不会自动扩展权限或改变既有安装；更新时重新展示权限并确认。卸载保留独立存档，再次安装可恢复；授权和旧会话立即失效。应用下架或封禁后不能继续获取宿主能力；恢复上架后旧会话仍不会复活，需要重新打开。</p>
+<h2 id="获取-sdk">获取 SDK</h2>
+<p>文档目录附带 <code>gpc-plugin.js</code>、<code>index.mjs</code>、<code>index.d.ts</code> 和 <code>gpc-plugin-sdk.tgz</code>。可下载包后安装：</p>
+<pre><code class="language-sh">npm install ./gpc-plugin-sdk.tgz
+</code></pre>
+<pre><code class="language-js">import { createPlugin } from &#39;@gpc/plugin-sdk&#39;;
+const gpc = createPlugin();
+const context = await gpc.getContext();
+console.log(context.appId, context.version, context.permissions, context.group);
+</code></pre>
+<p>或直接引入自行托管的 SDK：</p>
+<pre><code class="language-html">&lt;script src=&quot;./gpc-plugin.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+  const gpc = GPCPluginSDK.createPlugin();
+  gpc.getContext().then(console.log).catch(console.error);
+&lt;/script&gt;
+</code></pre>
+<p>移动端和桌面端使用注入 Provider。钱包浏览器网页宿主使用独立 iframe 和校验来源的消息桥接；插件页面应允许钱包网页来源嵌入，且插件必须与钱包网页不同源。普通浏览器直接打开开发者网页不会产生插件安装授权。</p>
+<h2 id="声明清单">声明清单</h2>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;群投票&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;description&quot;: &quot;在当前群发起活动投票，并分享投票链接。&quot;,
+  &quot;category&quot;: &quot;群工具&quot;,
+  &quot;iconUrl&quot;: &quot;https://plugins.example/logo.png&quot;,
+  &quot;entryUrl&quot;: &quot;https://plugins.example/vote&quot;,
+  &quot;privacyUrl&quot;: &quot;https://plugins.example/privacy&quot;,
+  &quot;supportUrl&quot;: &quot;https://plugins.example/support&quot;,
+  &quot;permissions&quot;: [&quot;identity.login&quot;, &quot;group.context&quot;, &quot;storage.read&quot;, &quot;storage.write&quot;],
+  &quot;optionalPermissions&quot;: [&quot;chat.share&quot;, &quot;device.vibrate&quot;],
+  &quot;placements&quot;: [&quot;personal&quot;, &quot;group&quot;, &quot;chat_toolbar&quot;],
+  &quot;orientation&quot;: &quot;portrait&quot;
+}
+</code></pre>
+<p>所有地址须为有效 HTTPS，无 URL 用户名密码。入口、图标、隐私政策与支持地址必填。不接受私网 IP、localhost 等本地来源。权限只能来自下表，必需与可选权限不能重复。安装位置为 <code>personal</code>、<code>group</code>、<code>chat_toolbar</code>，至少一个；方向为 <code>portrait</code> 或 <code>landscape</code>。</p>
+<table>
+<thead>
+<tr>
+<th>权限</th>
+<th>SDK 调用</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>identity.login</code></td>
+<td><code>login({ nonce })</code></td>
+<td>当前身份钱包的登录证明与展示昵称</td>
+</tr>
+<tr>
+<td><code>wallet.request</code></td>
+<td><code>wallet.request({ method, params })</code></td>
+<td>标准钱包连接、读取、签名与交易；保留原确认流程</td>
+</tr>
+<tr>
+<td><code>group.context</code></td>
+<td><code>getContext().group</code></td>
+<td>仅当前安装群的资料和当前调用人的实时角色</td>
+</tr>
+<tr>
+<td><code>chat.share</code></td>
+<td><code>shareToGroup(card)</code></td>
+<td>用户选择群并确认发送卡片</td>
+</tr>
+<tr>
+<td><code>storage.read</code></td>
+<td><code>storage.get(key)</code></td>
+<td>读取本插件、本安装、本身份的数据</td>
+</tr>
+<tr>
+<td><code>storage.write</code></td>
+<td><code>storage.set/remove</code></td>
+<td>写入或删除独立存储</td>
+</tr>
+<tr>
+<td><code>device.motion</code></td>
+<td><code>gravity.start/stop/calibrate/onChange/onStop</code></td>
+<td>重力控制与真实水平度</td>
+</tr>
+<tr>
+<td><code>device.vibrate</code></td>
+<td><code>vibrate/cancelVibration</code></td>
+<td>有时长和频率限制的震动</td>
+</tr>
+<tr>
+<td><code>ui.fullscreen</code></td>
+<td><code>requestFullscreen/exitFullscreen</code></td>
+<td>请求宿主布局全屏</td>
+</tr>
+<tr>
+<td><code>ads.rewarded</code></td>
+<td><code>ads.getCapabilities/load/show</code></td>
+<td>沿用现有激励广告框架</td>
+</tr>
+</tbody></table>
+<p><code>getCapabilities()</code> 返回市场 SDK 协议与已授予权限；<code>device.getCapabilities()</code> 和 <code>ads.getCapabilities()</code> 查询实际宿主能力。授权表示可以请求，不保证当前系统、基座或广告平台可用。重力与水平度需要包含相应原生模块的 429 完整基座；旧基座不能靠 JS 更新获得模块。当前真实广告开关保持关闭，接入插件市场不会自动启用广告。桌面和网页没有移动传感器及广告适配器时返回明确不可用。</p>
+<h2 id="身份与业务后端">身份与业务后端</h2>
+<pre><code class="language-js">const { nonce } = await fetch(&#39;/auth/challenge&#39;).then(r =&gt; r.json());
+const proof = await gpc.login({ nonce });
+await fetch(&#39;/auth/verify&#39;, {
+  method: &#39;POST&#39;, headers: { &#39;Content-Type&#39;: &#39;application/json&#39; },
+  body: JSON.stringify(proof)
+});
+</code></pre>
+<p>业务后端生成 16～128 位字母数字随机、一次性、绑定登录会话的 nonce。验证自己的预期来源、网络、时间、固定消息模板及签名，原子消费 nonce 后建立业务会话。昵称是展示资料，不在签名内，不能作为身份或管理权限。详见 <a href="identity-login-api.md">身份登录协议</a>。外部身份钱包不能保证静默签名，会返回 <code>4200</code>，业务应提供明确的外部钱包登录方式。</p>
+<p>身份钱包和付款钱包可能不同。身份登录不会授予付款、资产、聊天记录或付款签名权限。标准钱包请求保持既有确认和支付密码规则；目前链服务范围沿用宿主的 BSC 配置。</p>
+<h2 id="当前群与独立存储">当前群与独立存储</h2>
+<pre><code class="language-js">const ctx = await gpc.getContext();
+if (ctx.group) console.log(ctx.group.id, ctx.group.role, ctx.group.member);
+await gpc.storage.set(&#39;preferences&#39;, { reminder: true });
+const preferences = await gpc.storage.get(&#39;preferences&#39;);
+await gpc.storage.remove(&#39;preferences&#39;);
+</code></pre>
+<p>个人入口没有 <code>group</code> 字段。没有 <code>group.context</code> 授权时群上下文不返回。群角色由服务端查询，前端参数不能指定用户身份或角色。离群后原会话不能继续使用。插件不能读取全部群列表或历史聊天明文。</p>
+<p>存储键为 1～100 位字母、数字、下划线、点、冒号或连字符。值由 SDK 序列化为 JSON，每值最多 65,535 字节，每安装／身份最多 128 个键、1 MiB。群插件的个人存储也按实际调用身份隔离，不会把群主的数据交给群成员。多人共享投票、订单或游戏状态由开发者自己的业务后端管理。</p>
+<h2 id="分享、设备与生命周期">分享、设备与生命周期</h2>
+<pre><code class="language-js">if (ctx.permissions.includes(&#39;chat.share&#39;)) {
+  await gpc.shareToGroup({ title: &#39;周末活动投票&#39;, text: &#39;请选择时间&#39;, url: &#39;https://plugins.example/vote/123&#39; });
+}
+</code></pre>
+<p>分享由宿主展示卡片和选群界面，开发者不能指定群静默发送。发送成功不代表阅读，也不能充当可信奖励依据。重力、设备和广告的完整参数沿用对应接口文档。插件退出时调用 <code>gpc.destroy()</code> 清理 SDK 自身监听；业务同时清理定时器与网络订阅。宿主负责页面离开和后台时释放传感器与取消等待中的操作。</p>
+<h2 id="对外-http-api">对外 HTTP API</h2>
+<p>API 基址与客户端环境一致，生产默认 <code>https://api.gpcchat.com/api</code>。完整机器可读协议为 <a href="plugin-market-openapi.json">plugin-market-openapi.json</a>。</p>
+<table>
+<thead>
+<tr>
+<th>调用方</th>
+<th>路径</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>公开</td>
+<td><code>GET /public/plugins?q=&amp;category=&amp;page=</code></td>
+<td>已审核上架目录，每页 40 条</td>
+</tr>
+<tr>
+<td>控制台登录用户</td>
+<td><code>GET /plugin-market/self/</code>、<code>POST /plugin-market/self/:action</code></td>
+<td>开发者登记、应用、版本、密钥、回调</td>
+</tr>
+<tr>
+<td>管理员</td>
+<td><code>GET /plugin-market/admin/</code>、<code>POST /plugin-market/admin/:action</code></td>
+<td>审核、上架状态、推荐与审计</td>
+</tr>
+<tr>
+<td>钱包宿主</td>
+<td><code>GET /wallet/plugins/context?groupId=</code></td>
+<td>当前群角色及是否可管理安装</td>
+</tr>
+<tr>
+<td>钱包宿主</td>
+<td><code>POST /wallet/plugins/installations/:id/request</code></td>
+<td>签名代理调用，校验来源、安装、身份与设备</td>
+</tr>
+<tr>
+<td>钱包宿主</td>
+<td><code>GET/POST /wallet/plugins/installations</code></td>
+<td>安装列表与明确授权安装</td>
+</tr>
+<tr>
+<td>钱包宿主</td>
+<td><code>DELETE /wallet/plugins/installations/:id</code></td>
+<td>卸载撤权</td>
+</tr>
+<tr>
+<td>钱包宿主</td>
+<td><code>POST /wallet/plugins/installations/:id/session</code></td>
+<td>签发 15 分钟插件会话</td>
+</tr>
+<tr>
+<td>插件令牌</td>
+<td><code>GET /plugins/open/context</code></td>
+<td>应用、版本、权限、授权身份与当前群</td>
+</tr>
+<tr>
+<td>插件令牌</td>
+<td><code>GET/PUT/DELETE /plugins/open/storage?key=</code></td>
+<td>独立存储，PUT body 为 <code>{ &quot;value&quot;: &quot;JSON 字符串&quot; }</code></td>
+</tr>
+<tr>
+<td>服务端应用密钥</td>
+<td><code>GET /plugins/open/events?after=事件ID</code></td>
+<td>本应用事件增量读取，每次最多 100 条</td>
+</tr>
+</tbody></table>
+<p>开发者接口复用已有控制台登录体系。钱包宿主写接口同时要求有效设备 Wallet JWT 和现有规范化钱包请求签名，第三方页面不应直接调用这些宿主接口。</p>
+<pre><code class="language-js">const auth = await gpc.getAuthorization();
+// 可交给自己的后端，绝不获取或传递钱包主 JWT。
+await fetch(&#39;/my-backend/verify-plugin&#39;, {
+  method: &#39;POST&#39;, headers: { &#39;Content-Type&#39;: &#39;application/json&#39; },
+  body: JSON.stringify({ token: auth.token })
+});
+</code></pre>
+<p>业务后端用此 <code>gps_</code> 令牌调用公开插件 API，并核对返回的 <code>appId</code> 等于自己的应用。令牌绑定应用、安装记录、当前身份、设备、权限与版本，默认 15 分钟有效。授权改变、卸载、下架、封禁、设备撤销或身份封禁会使请求被拒绝。浏览器调用还验证 <code>Origin</code>；服务端调用可以不发送 Origin。令牌仅应在可信后端和 TLS 连接使用。</p>
+<p><code>gpk_</code> 应用密钥只允许读取自己应用的事件，不能冒充用户、读取用户存储或调用钱包。密钥仅显示一次，服务端仅保存摘要；可以单独撤销。事件游标必须属于同一应用，按单调序号增量读取。</p>
+<h2 id="签名事件回调">签名事件回调</h2>
+<p>开发者中心设置 HTTPS 地址并保存一次性显示的回调密钥。服务器需设置 <code>GPC_PLUGIN_WEBHOOK_KEY</code>，为 32 字节随机值的 Base64，用来加密落库回调密钥；该配置缺失时明确拒绝启用回调，不会落库明文。示例生成：<code>openssl rand -base64 32</code>。多 API 副本须使用同一密钥，并保留受限备份。</p>
+<p>回调事件包括 <code>release.approved</code>、<code>release.rejected</code>、<code>app.active</code>、<code>app.delisted</code>、<code>app.suspended</code>、<code>installation.authorized</code>、<code>installation.revoked</code>。安装事件包含安装 ID、版本与授权；只有授予 <code>group.context</code> 时才附带群 ID，不附带个人钱包或群成员列表。开发者审计中的安装操作者隐藏钱包地址，平台管理员保留完整审计。</p>
+<p>请求为 <code>POST</code> JSON，头包括 <code>X-GPC-Event-ID</code>、<code>X-GPC-Timestamp</code> 和 <code>X-GPC-Signature</code>。签名为：</p>
+<pre><code class="language-text">HMAC-SHA256(webhookSecret, timestamp + &quot;.&quot; + eventId + &quot;.&quot; + rawBody)
+</code></pre>
+<p>业务后端必须对原始请求字节验签，核对时间窗口及正文 ID／应用 ID，并按事件 ID 事务去重。成功入库或持久化入队后返回 2xx。事件 payload 字段是 JSON 字符串，验签后再解析。平台至少一次投递，失败按 5 秒起步指数退避，10 次后标记失败，可人工重试；副本通过数据库租约争抢，崩溃后可恢复。关闭回调时未投递记录标记暂停；重新启用后在投递列表选择重试。每次启用保存会轮换签名密钥。</p>
+<p>回调仅连接解析到公网的 HTTPS 地址，DNS 在实际连接时校验并固定 IP，禁止私网和跳转。开发者仍可用事件查询 API 补偿或对账。接收端示例见附带的 <code>examples/plugin-vote/server.mjs</code>。</p>
+<h2 id="错误与兼容">错误与兼容</h2>
+<p>HTTP 返回 <code>{ success, data }</code> 或 <code>{ success:false, code, error }</code>。常见状态：400 参数无效，401 会话失效，403 未授权，404 不存在，409 版本或状态冲突，413 存储值过大，429 频控，503 依赖暂不可用。</p>
+<p>桥接保留 <code>4001</code> 用户取消、<code>4100</code> 未授权、<code>4200</code> 宿主不支持、<code>-32602</code> 参数错误。网络失败、超时和重试不能被当作支付或发奖成功。SDK 应显示可恢复状态，付款最终结果以链上确认及业务后端核验为准。</p>
+<h2 id="运行示例与验证">运行示例与验证</h2>
+<p>仓库 <code>examples/plugin-vote</code> 提供页面、声明、登录验证、插件令牌核对和原始字节回调验签示例；用自己的实际 HTTPS 地址替换示例域名后提交。<code>sdk/plugin</code> 同时提供源码、声明和独立测试，不依赖前端框架。</p>
+<pre><code class="language-sh">node --test sdk/plugin/test/*.test.cjs
+node --test examples/plugin-vote/test/*.test.mjs
+</code></pre>
+<p>本地测试和模拟浏览器不代表真实用户钱包签名、真实付款、真机传感器或广告填充验收。市场代码的实施和验证记录另见仓库技术记录。</p>
+</main></html>

@@ -1,0 +1,14 @@
+{
+  "name": "群投票",
+  "version": "1.0.0",
+  "description": "在当前群发起活动投票，并分享投票链接。",
+  "category": "群工具",
+  "iconUrl": "https://plugins.example/logo.png",
+  "entryUrl": "https://plugins.example/",
+  "privacyUrl": "https://plugins.example/privacy",
+  "supportUrl": "https://plugins.example/support",
+  "permissions": ["identity.login", "group.context", "storage.read", "storage.write"],
+  "optionalPermissions": ["chat.share"],
+  "placements": ["personal", "group", "chat_toolbar"],
+  "orientation": "portrait"
+}

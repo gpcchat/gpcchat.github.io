@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>群投票 · GPC 插件示例</title>
+<style>body{margin:0;background:#f4f6fa;color:#172537;font:16px system-ui}main{max-width:520px;margin:40px auto;padding:24px;background:#fff;border-radius:20px}button{padding:14px;border:0;border-radius:10px;background:#176447;color:white;margin:6px;cursor:pointer}p{line-height:1.7}pre{white-space:pre-wrap;overflow-wrap:anywhere}#status{color:#596b7a}</style>
+<main><p>GPC 开发者示例</p><h1>周末活动投票</h1><p>你希望群活动安排在哪一天？选择会保存在当前身份的插件存储中。</p><button data-choice="周六">周六</button><button data-choice="周日">周日</button><button id="share">分享到群</button><button id="login">验证身份登录</button><p id="status" role="status">正在连接已安装插件…</p><pre id="context"></pre></main>
+<script src="./gpc-plugin.js"></script><script>
+const status=document.querySelector('#status');let gpc,context;try{gpc=GPCPluginSDK.createPlugin()}catch(e){status.textContent=e.message}
+if(gpc){
+const run=async fn=>{try{await fn()}catch(e){status.textContent=e.message}};
+run(async()=>{context=await gpc.getContext();document.querySelector('#context').textContent=JSON.stringify(context,null,2);status.textContent='已保存的选择：'+((await gpc.storage.get('choice'))||'尚未选择');document.querySelector('#share').disabled=!context.permissions.includes('chat.share')});
+document.querySelectorAll('[data-choice]').forEach(button=>button.onclick=()=>run(async()=>{await gpc.storage.set('choice',button.dataset.choice);status.textContent='已保存：'+button.dataset.choice}));
+document.querySelector('#share').onclick=()=>run(async()=>{await gpc.shareToGroup({title:'周末活动投票',text:'请选择周六或周日',url:location.href});status.textContent='已分享'});
+document.querySelector('#login').onclick=()=>run(async()=>{const {nonce}=await fetch('/auth/challenge').then(r=>r.json());const proof=await gpc.login({nonce});const response=await fetch('/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(proof)});const result=await response.json();if(!response.ok)throw Error(result.error);status.textContent='身份验证成功：'+result.address});
+window.addEventListener('pagehide',()=>gpc.destroy());
+}
+</script></html>
