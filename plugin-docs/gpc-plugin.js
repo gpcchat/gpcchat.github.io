@@ -5,7 +5,9 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
   function createFrameProvider() {
-    var peer = typeof window !== "undefined" && (window.parent !== window ? window.parent : window.opener);
+    var peer =
+      typeof window !== "undefined" &&
+      (window.parent !== window ? window.parent : window.opener);
     if (!peer)
       throw Object.assign(new Error("请在 GPC 安装并打开插件"), { code: 4200 });
     var pending = new Map(),
@@ -38,17 +40,32 @@
       request: function (args) {
         return new Promise(function (resolve, reject) {
           var id = "plugin-" + next++;
-          var timeout = setTimeout(function () {
-            pending.delete(id);
-            reject(Object.assign(new Error("插件请求超时"), { code: -32603 }));
-          }, 190000);
+          var timeout = setTimeout(
+            function () {
+              pending.delete(id);
+              reject(
+                Object.assign(new Error("插件请求超时"), { code: -32603 }),
+              );
+            },
+            /^gpc_plugin_(orders_pay|notifications_subscribe|files_choose|media_choose|camera_scan)$/.test(
+              args.method,
+            )
+              ? 610000
+              : 190000,
+          );
           pending.set(id, {
             resolve: resolve,
             reject: reject,
             timeout: timeout,
           });
-          if (/^(eth_requestAccounts|eth_sendTransaction|eth_sign|personal_sign|wallet_|gpc_shareToGroup)/.test(args.method)) {
-            try { peer.focus(); } catch (_) {}
+          if (
+            /^(eth_requestAccounts|eth_sendTransaction|eth_sign|personal_sign|wallet_|gpc_shareToGroup|gpc_plugin_(orders_pay|notifications_subscribe|files_choose|media_choose|camera_scan))/.test(
+              args.method,
+            )
+          ) {
+            try {
+              peer.focus();
+            } catch (_) {}
           }
           peer.postMessage(
             {
@@ -77,7 +94,8 @@
       options.provider ||
       (typeof window !== "undefined" &&
       window.ethereum &&
-      (window.ethereum.isGPCWallet || (window.parent === window && !window.opener))
+      (window.ethereum.isGPCWallet ||
+        (window.parent === window && !window.opener))
         ? window.ethereum
         : createFrameProvider());
     if (!provider || typeof provider.request !== "function")
@@ -98,6 +116,64 @@
       },
       getAuthorization: function () {
         return request("gpc_plugin_getAuthorization");
+      },
+      getLaunchContext: function () {
+        return request("gpc_plugin_getLaunchContext");
+      },
+      orders: {
+        get: function (orderId) {
+          return request("gpc_plugin_orders_get", { orderId: orderId });
+        },
+        pay: function (orderId) {
+          return request("gpc_plugin_orders_pay", { orderId: orderId });
+        },
+        cancel: function (orderId) {
+          return request("gpc_plugin_orders_cancel", { orderId: orderId });
+        },
+        submit: function (orderId, txHash) {
+          return request("gpc_plugin_orders_submit", {
+            orderId: orderId,
+            txHash: txHash,
+          });
+        },
+      },
+      notifications: {
+        topics: function () {
+          return request("gpc_plugin_notifications_topics");
+        },
+        subscriptions: function () {
+          return request("gpc_plugin_notifications_subscriptions");
+        },
+        subscribe: function (topic) {
+          return request("gpc_plugin_notifications_subscribe", {
+            topic: topic,
+          });
+        },
+        unsubscribe: function (topic) {
+          return request("gpc_plugin_notifications_unsubscribe", {
+            topic: topic,
+          });
+        },
+      },
+      links: {
+        create: function (options) {
+          return request("gpc_plugin_links_create", options);
+        },
+      },
+      files: {
+        choose: function (options) {
+          return request("gpc_plugin_files_choose", options || {});
+        },
+      },
+      media: {
+        choose: function () {
+          return request("gpc_plugin_media_choose");
+        },
+      },
+      camera: {
+        scan: function () {
+          return request("gpc_plugin_camera_scan");
+        },
       },
       login: function (challenge) {
         return request("gpc_login", challenge);

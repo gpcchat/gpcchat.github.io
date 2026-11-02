@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "GPC 插件市场 OpenAPI",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "开发者、审核、安装授权和限定应用范围的 HTTP API。SDK 另提供宿主设备、分享和钱包接口。"
   },
   "servers": [
@@ -5333,7 +5333,17 @@
                     "type": "string",
                     "enum": [
                       "context",
-                      "storage"
+                      "storage",
+                      "launch",
+                      "links.create",
+                      "notifications.topics",
+                      "notifications.subscribe",
+                      "notifications.unsubscribe",
+                      "notifications.subscriptions",
+                      "orders.get",
+                      "orders.prepare",
+                      "orders.submit",
+                      "orders.cancel"
                     ]
                   },
                   "method": {
@@ -5349,6 +5359,10 @@
                   },
                   "value": {
                     "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "description": "宿主操作数据；订阅确认和付款必须使用 SDK 的宿主交互流程"
                   }
                 },
                 "required": [
@@ -5831,7 +5845,16 @@
                         "device.motion",
                         "device.vibrate",
                         "ui.fullscreen",
-                        "ads.rewarded"
+                        "ads.rewarded",
+                        "bot.receive",
+                        "bot.send",
+                        "group.events",
+                        "orders.pay",
+                        "notifications.subscribe",
+                        "links.create",
+                        "files.choose",
+                        "media.choose",
+                        "camera.scan"
                       ]
                     }
                   }
@@ -7478,6 +7501,1911 @@
           }
         ]
       }
+    },
+    "/public/plugins/{appId}": {
+      "get": {
+        "summary": "查询当前上架应用",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "listing": {
+                          "$ref": "#/components/schemas/Listing"
+                        }
+                      },
+                      "required": [
+                        "listing"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "listing": {
+              "$ref": "#/components/schemas/Listing"
+            }
+          },
+          "required": [
+            "listing"
+          ]
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/public/plugins/{appId}/scenes/{sceneId}": {
+      "get": {
+        "summary": "校验公开场景与当前上架应用",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "listing": {
+                          "$ref": "#/components/schemas/Listing"
+                        },
+                        "scene": {
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "listing",
+                        "scene"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "listing": {
+              "$ref": "#/components/schemas/Listing"
+            },
+            "scene": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "listing",
+            "scene"
+          ]
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "appId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sceneId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/plugins/open/orders": {
+      "post": {
+        "summary": "开发者创建绑定用户授权的订单",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Order"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Order"
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "customerAuthorization": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "asset": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string"
+                  },
+                  "expiresIn": {
+                    "type": "integer",
+                    "minimum": 60,
+                    "maximum": 86400
+                  }
+                },
+                "required": [
+                  "customerAuthorization",
+                  "reference",
+                  "title",
+                  "asset",
+                  "amount"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugins/open/scenes": {
+      "post": {
+        "summary": "开发者创建公开活动场景；群场景须指定已授权安装",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "scene": {
+                          "$ref": "#/components/schemas/Scene"
+                        },
+                        "url": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "scene",
+                        "url"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "scene": {
+              "$ref": "#/components/schemas/Scene"
+            },
+            "url": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "scene",
+            "url"
+          ]
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "installationId": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  },
+                  "params": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "expiresIn": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugins/open/orders/{orderId}": {
+      "get": {
+        "summary": "本人或开发者查询订单",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Order"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Order"
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          },
+          {
+            "Plugin": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/plugins/open/bot-messages": {
+      "post": {
+        "summary": "以应用机器人身份向授权群发送卡片",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Card"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Card"
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "installationId": {
+                    "type": "string"
+                  },
+                  "idempotencyKey": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "buttons": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CardButton"
+                    }
+                  }
+                },
+                "required": [
+                  "installationId",
+                  "idempotencyKey",
+                  "text"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugins/open/bot-messages/{messageId}": {
+      "get": {
+        "summary": "查询最新卡片和版本",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Card"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Card"
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "messageId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "更新原卡片；旧版本返回 CARD_VERSION_CONFLICT",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Card"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Card"
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "messageId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string"
+                  },
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "buttons": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CardButton"
+                    }
+                  }
+                },
+                "required": [
+                  "idempotencyKey",
+                  "expectedVersion"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugins/open/bot-messages/{messageId}/update": {
+      "post": {
+        "summary": "卡片更新兼容入口",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Card"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Card"
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "messageId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "idempotencyKey": {
+                    "type": "string"
+                  },
+                  "expectedVersion": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "buttons": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CardButton"
+                    }
+                  }
+                },
+                "required": [
+                  "idempotencyKey",
+                  "expectedVersion"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugins/open/notifications": {
+      "post": {
+        "summary": "向已订阅用户发送或定时投递提醒",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Notification"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Notification"
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "subscriptionId": {
+                    "type": "string"
+                  },
+                  "idempotencyKey": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "sceneId": {
+                    "type": "string"
+                  },
+                  "deliverAt": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                },
+                "required": [
+                  "subscriptionId",
+                  "idempotencyKey",
+                  "title",
+                  "body"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugins/open/notifications/{notificationId}": {
+      "get": {
+        "summary": "查询本应用通知投递和已读状态",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Notification"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Notification"
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notificationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/wallet/plugins/cards": {
+      "get": {
+        "summary": "按单调游标同步本群最新卡片（含离线更新）",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "cards": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Card"
+                          }
+                        },
+                        "cursor": {
+                          "type": "string"
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "cards",
+                        "cursor",
+                        "hasMore"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cards": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Card"
+              }
+            },
+            "cursor": {
+              "type": "string"
+            },
+            "hasMore": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "cards",
+            "cursor",
+            "hasMore"
+          ]
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/wallet/plugins/cards/{messageId}": {
+      "get": {
+        "summary": "当前群成员读取权威卡片",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Card"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Card"
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "messageId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/wallet/plugins/bots": {
+      "get": {
+        "summary": "当前群已授权机器人",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/wallet/plugins/bot-events": {
+      "post": {
+        "summary": "宿主转交明确发给机器人的指令或按钮",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "nullable": true
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "installationId": {
+                    "type": "string"
+                  },
+                  "eventId": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "command",
+                      "button"
+                    ]
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "messageId": {
+                    "type": "string"
+                  },
+                  "buttonId": {
+                    "type": "string"
+                  },
+                  "cardVersion": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                },
+                "required": [
+                  "installationId",
+                  "eventId",
+                  "kind"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wallet/plugins/installations/{id}/bot-policy": {
+      "get": {
+        "summary": "当前机器人事件授权",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "installationId": {
+                          "type": "string"
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "events": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "integer",
+                          "format": "int64"
+                        }
+                      },
+                      "required": [
+                        "installationId",
+                        "enabled",
+                        "events",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "installationId": {
+              "type": "string"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "events": {
+              "type": "string"
+            },
+            "updatedAt": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "required": [
+            "installationId",
+            "enabled",
+            "events",
+            "updatedAt"
+          ]
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "summary": "群管理者启停机器人并调整事件范围",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "installationId": {
+                          "type": "string"
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "events": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "integer",
+                          "format": "int64"
+                        }
+                      },
+                      "required": [
+                        "installationId",
+                        "enabled",
+                        "events",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "installationId": {
+              "type": "string"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "events": {
+              "type": "string"
+            },
+            "updatedAt": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "required": [
+            "installationId",
+            "enabled",
+            "events",
+            "updatedAt"
+          ]
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "enabled",
+                  "events"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wallet/plugins/installations/{id}/grants": {
+      "put": {
+        "summary": "修改当前版本可选权限并使旧会话失效",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Installation"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/Installation"
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "grants": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "identity.login",
+                        "wallet.request",
+                        "group.context",
+                        "chat.share",
+                        "storage.read",
+                        "storage.write",
+                        "device.motion",
+                        "device.vibrate",
+                        "ui.fullscreen",
+                        "ads.rewarded",
+                        "bot.receive",
+                        "bot.send",
+                        "group.events",
+                        "orders.pay",
+                        "notifications.subscribe",
+                        "links.create",
+                        "files.choose",
+                        "media.choose",
+                        "camera.scan"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "grants"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wallet/plugins/subscriptions": {
+      "get": {
+        "summary": "当前身份消息订阅",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Subscription"
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Subscription"
+          }
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ]
+      }
+    },
+    "/wallet/plugins/subscriptions/{subscriptionId}": {
+      "delete": {
+        "summary": "取消本人订阅并取消待发任务",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "nullable": true
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscriptionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/wallet/plugins/inbox": {
+      "get": {
+        "summary": "本人插件消息收件箱",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Notification"
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Notification"
+          }
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ]
+      }
+    },
+    "/wallet/plugins/inbox/{notificationId}/read": {
+      "post": {
+        "summary": "标记本人通知已读",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "nullable": true
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notificationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {},
+                "required": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wallet/plugins/installations/{id}/files": {
+      "post": {
+        "summary": "宿主上传用户主动选择的原始文件字节，最多 20 MiB",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PluginFile"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/PluginFile"
+        },
+        "security": [
+          {
+            "Wallet": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Plugin-Session",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Plugin-Origin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugins/open/files/{fileId}": {
+      "get": {
+        "summary": "当前应用后端或同用户插件会话下载有效附件",
+        "responses": {
+          "200": {
+            "description": "附件字节，强制 attachment，24 小时有效",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "$ref": "#/components/schemas/PluginFile"
+        },
+        "security": [
+          {
+            "DeveloperKey": []
+          },
+          {
+            "Plugin": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fileId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "x-gpc-binary-response": true
+      }
+    },
+    "/plugin-market/self/retry-business": {
+      "post": {
+        "summary": "重试失败卡片或收件箱通知",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "nullable": true
+        },
+        "security": [
+          {
+            "Console": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "appId": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "card",
+                      "notification"
+                    ]
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "appId",
+                  "kind",
+                  "id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/plugin-market/admin/retry-business": {
+      "post": {
+        "summary": "重试失败卡片或收件箱通知",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-gpc-data-schema": {
+          "type": "object",
+          "nullable": true
+        },
+        "security": [
+          {
+            "Console": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "appId": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "card",
+                      "notification"
+                    ]
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "appId",
+                  "kind",
+                  "id"
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7551,7 +9479,16 @@
                 "device.motion",
                 "device.vibrate",
                 "ui.fullscreen",
-                "ads.rewarded"
+                "ads.rewarded",
+                "bot.receive",
+                "bot.send",
+                "group.events",
+                "orders.pay",
+                "notifications.subscribe",
+                "links.create",
+                "files.choose",
+                "media.choose",
+                "camera.scan"
               ]
             }
           },
@@ -7570,7 +9507,16 @@
                 "device.motion",
                 "device.vibrate",
                 "ui.fullscreen",
-                "ads.rewarded"
+                "ads.rewarded",
+                "bot.receive",
+                "bot.send",
+                "group.events",
+                "orders.pay",
+                "notifications.subscribe",
+                "links.create",
+                "files.choose",
+                "media.choose",
+                "camera.scan"
               ]
             }
           },
@@ -7593,6 +9539,18 @@
               "portrait",
               "landscape"
             ]
+          },
+          "bot": {
+            "$ref": "#/components/schemas/BotConfig"
+          },
+          "payments": {
+            "$ref": "#/components/schemas/PaymentConfig"
+          },
+          "notificationTopics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationTopic"
+            }
           }
         }
       },
@@ -7910,7 +9868,16 @@
                 "device.motion",
                 "device.vibrate",
                 "ui.fullscreen",
-                "ads.rewarded"
+                "ads.rewarded",
+                "bot.receive",
+                "bot.send",
+                "group.events",
+                "orders.pay",
+                "notifications.subscribe",
+                "links.create",
+                "files.choose",
+                "media.choose",
+                "camera.scan"
               ]
             }
           },
@@ -7923,6 +9890,9 @@
           },
           "group": {
             "$ref": "#/components/schemas/GroupContext"
+          },
+          "subject": {
+            "type": "string"
           }
         },
         "required": [
@@ -7930,7 +9900,8 @@
           "installationId",
           "version",
           "permissions",
-          "expiresAt"
+          "expiresAt",
+          "subject"
         ]
       },
       "Listing": {
@@ -8034,6 +10005,42 @@
           "page": {
             "type": "integer",
             "format": "int64"
+          },
+          "operations": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "orders": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              },
+              "cards": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Card"
+                }
+              },
+              "notifications": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              },
+              "subscriptions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            },
+            "required": [
+              "orders",
+              "cards",
+              "notifications",
+              "subscriptions"
+            ]
           }
         },
         "required": [
@@ -8047,6 +10054,448 @@
           "deliveries",
           "webhooks",
           "page"
+        ]
+      },
+      "NotificationTopic": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description"
+        ]
+      },
+      "BotConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "commands": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "command",
+                "button",
+                "member.joined",
+                "member.left"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "commands",
+          "events"
+        ]
+      },
+      "PaymentConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "chainId": {
+            "type": "integer",
+            "enum": [
+              56,
+              97
+            ]
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "chainId",
+          "recipient",
+          "assets"
+        ]
+      },
+      "CardButton": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "sceneId": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "disabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ]
+      },
+      "Card": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "id": {
+            "type": "string"
+          },
+          "appId": {
+            "type": "string"
+          },
+          "installationId": {
+            "type": "string"
+          },
+          "groupId": {
+            "type": "string"
+          },
+          "botId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string",
+            "description": "包含 type=gpc_plugin_card、title、text、status、buttons 和 version 的 JSON 字符串"
+          },
+          "state": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updatedAt": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "timestamp",
+          "id",
+          "appId",
+          "installationId",
+          "groupId",
+          "botId",
+          "name",
+          "content",
+          "state",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Order": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "appId": {
+            "type": "string"
+          },
+          "installationId": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "chainId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "asset": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,77}$"
+          },
+          "payer": {
+            "type": "string"
+          },
+          "txHash": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "prepared",
+              "submitted",
+              "paid",
+              "failed",
+              "expired",
+              "cancelled"
+            ]
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "expiresAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "paidAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "confirmations": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastError": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "appId",
+          "installationId",
+          "subject",
+          "reference",
+          "title",
+          "chainId",
+          "recipient",
+          "asset",
+          "amount",
+          "payer",
+          "txHash",
+          "status",
+          "createdAt",
+          "expiresAt",
+          "paidAt",
+          "confirmations",
+          "lastError"
+        ]
+      },
+      "Scene": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "appId": {
+            "type": "string"
+          },
+          "groupId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "params": {
+            "type": "string",
+            "description": "字符串键值对象的 JSON 字符串"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "expiresAt": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "id",
+          "appId",
+          "path",
+          "params",
+          "createdAt",
+          "expiresAt"
+        ]
+      },
+      "Subscription": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "appId": {
+            "type": "string"
+          },
+          "installationId": {
+            "type": "string"
+          },
+          "topic": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "id",
+          "appId",
+          "installationId",
+          "topic",
+          "subject",
+          "active",
+          "updatedAt"
+        ]
+      },
+      "Notification": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "appId": {
+            "type": "string"
+          },
+          "subscriptionId": {
+            "type": "string"
+          },
+          "installationId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "sceneId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "attempts": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deliverAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "nextAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "readAt": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "id",
+          "appId",
+          "subscriptionId",
+          "installationId",
+          "title",
+          "body",
+          "sceneId",
+          "state",
+          "attempts",
+          "deliverAt",
+          "nextAt",
+          "createdAt",
+          "readAt"
+        ]
+      },
+      "PluginFile": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "appId": {
+            "type": "string"
+          },
+          "installationId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "id",
+          "appId",
+          "installationId",
+          "name",
+          "mime",
+          "size",
+          "sha256",
+          "expiresAt"
         ]
       }
     },

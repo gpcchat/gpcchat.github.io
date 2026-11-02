@@ -1,4 +1,4 @@
-export type Permission =
+export type LegacyPermission =
   | "identity.login"
   | "wallet.request"
   | "group.context"
@@ -9,6 +9,17 @@ export type Permission =
   | "device.vibrate"
   | "ui.fullscreen"
   | "ads.rewarded";
+export type BusinessPermission =
+  | "bot.receive"
+  | "bot.send"
+  | "group.events"
+  | "orders.pay"
+  | "notifications.subscribe"
+  | "links.create"
+  | "files.choose"
+  | "media.choose"
+  | "camera.scan";
+export type Permission = LegacyPermission | BusinessPermission;
 export interface Provider {
   request(args: {
     method: string;
@@ -21,7 +32,8 @@ export interface PluginContext {
   appId: string;
   installationId: string;
   version: string;
-  permissions: Permission[];
+  permissions: Array<Permission | BusinessPermission>;
+  subject: string;
   expiresAt: number;
   identityAddress?: string;
   group?: {
@@ -58,10 +70,47 @@ export interface GravityFrame {
   level: { roll: number; pitch: number; inclination: number; faceUp: boolean };
 }
 export interface PluginSDK {
+  getLaunchContext(): Promise<{
+    id: string;
+    path: string;
+    params: Record<string, string>;
+    expiresAt: number;
+  } | null>;
+  orders: {
+    get(orderId: string): Promise<PluginOrder>;
+    pay(orderId: string): Promise<PluginOrder>;
+    cancel(orderId: string): Promise<void>;
+    submit(orderId: string, txHash: string): Promise<PluginOrder>;
+  };
+  notifications: {
+    topics(): Promise<NotificationTopic[]>;
+    subscriptions(): Promise<NotificationSubscription[]>;
+    subscribe(topic: string): Promise<NotificationSubscription>;
+    unsubscribe(topic: string): Promise<NotificationSubscription>;
+  };
+  links: {
+    create(options: {
+      path: string;
+      params?: Record<string, string>;
+      expiresIn?: number;
+    }): Promise<{
+      scene: {
+        id: string;
+        appId: string;
+        path: string;
+        params: string;
+        expiresAt: number;
+      };
+      url: string;
+    }>;
+  };
+  files: { choose(options?: { accept?: string[] }): Promise<PluginFile> };
+  media: { choose(): Promise<PluginFile> };
+  camera: { scan(): Promise<string> };
   getContext(): Promise<PluginContext>;
   getCapabilities(): Promise<{
     apiVersion: number;
-    permissions: Permission[];
+    permissions: Array<Permission | BusinessPermission>;
     features: string[];
   }>;
   getAuthorization(): Promise<{
@@ -116,6 +165,75 @@ export interface PluginSDK {
   };
   on(event: string, handler: (value: any) => void): () => void;
   destroy(): void;
+}
+export interface NotificationTopic {
+  id: string;
+  name: string;
+  description: string;
+}
+export interface NotificationSubscription {
+  id: string;
+  appId: string;
+  installationId: string;
+  topic: string;
+  subject: string;
+  active: boolean;
+  updatedAt: number;
+}
+export interface PluginFile {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  sha256: string;
+  expiresAt: number;
+  downloadPath: string;
+}
+export interface PluginOrder {
+  id: string;
+  appId: string;
+  installationId: string;
+  subject: string;
+  reference: string;
+  title: string;
+  chainId: 56 | 97;
+  recipient: string;
+  asset: string;
+  amount: string;
+  payer: string;
+  txHash: string;
+  status:
+    | "pending"
+    | "prepared"
+    | "submitted"
+    | "paid"
+    | "failed"
+    | "expired"
+    | "cancelled";
+  createdAt: number;
+  expiresAt: number;
+  paidAt: number;
+  confirmations: number;
+  lastError: string;
+}
+export interface CardButton {
+  id: string;
+  label: string;
+  sceneId?: string;
+  data?: string;
+  disabled?: boolean;
+}
+export interface PluginCard {
+  id: string;
+  appId: string;
+  installationId: string;
+  groupId: string;
+  name: string;
+  content: string;
+  state: string;
+  version: number;
+  createdAt: number;
+  updatedAt: number;
 }
 export function createPlugin(options?: { provider?: Provider }): PluginSDK;
 export default createPlugin;

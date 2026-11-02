@@ -1,4 +1,7 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GPC 插件市场 · 开发者文档</title><style>body{margin:0;background:#f5f7fa;color:#182a3a;font:16px/1.75 system-ui}main{max-width:960px;margin:auto;padding:36px 20px}h1,h2,h3{line-height:1.3;margin-top:2em}a{color:#176447}pre{background:#142331;color:#e8f3f8;padding:20px;border-radius:12px;overflow:auto}code{font-size:13px}table{display:block;overflow:auto;border-collapse:collapse}td,th{padding:10px;border:1px solid #dbe3e8;text-align:left}nav{display:flex;gap:18px;flex-wrap:wrap}h1{font-size:36px}</style><main><nav><a href="gpc-plugin-sdk.tgz">下载 SDK</a><a href="plugin-market-openapi.json">OpenAPI JSON</a><a href="examples/plugin-vote/index.html">示例页面</a><a href="https://api.gpcchat.com/console/plugin-developer">开发者中心</a></nav><h1 id="gpc-插件市场接入指南">GPC 插件市场接入指南</h1>
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GPC 插件市场 · 开发者文档</title><style>body{margin:0;background:#f5f7fa;color:#182a3a;font:16px/1.75 system-ui}main{max-width:960px;margin:auto;padding:36px 20px}h1,h2,h3{line-height:1.3;margin-top:2em}a{color:#176447}pre{background:#142331;color:#e8f3f8;padding:20px;border-radius:12px;overflow:auto}code{font-size:13px}table{display:block;overflow:auto;border-collapse:collapse}td,th{padding:10px;border:1px solid #dbe3e8;text-align:left}nav{display:flex;gap:18px;flex-wrap:wrap}h1{font-size:36px}</style><main><nav><a href="gpc-plugin-sdk.tgz">下载 SDK</a><a href="plugin-market-openapi.json">OpenAPI JSON</a><a href="examples/plugin-vote/index.html">示例页面</a><a href="plugin-business-node.tgz">下载完整业务示例</a><a href="https://api.gpcchat.com/console/plugin-developer">开发者中心</a></nav><blockquote>
+<p>完整业务能力与可更新卡片见 <a href="plugin-business-capabilities.md">业务接入指南</a>。SDK 1.1.0 包含浏览器和 Node 服务端客户端。</p>
+</blockquote>
+<h1 id="gpc-插件市场接入指南">GPC 插件市场接入指南</h1>
 <p>插件以独立 HTTP／HTTPS 网页和业务后端运行。开发者使用 GPC SDK 调用宿主能力；用户将已审核的版本安装到个人应用，群主或管理员将插件安装到群菜单或聊天工具栏。插件内容由开发者托管，GPC 审核版本声明并执行权限边界。</p>
 <h2 id="开发者中心与发布">开发者中心与发布</h2>
 <p>使用现有控制台账号登录 <code>/console/plugin-developer</code>，登记开发者名称、联系渠道并接受接入规范，然后创建插件。填写版本、名称、介绍、分类、图标、HTTP／HTTPS 入口、隐私政策和支持地址，选择安装位置、必需权限、可选权限与屏幕方向，提交审核。</p>
@@ -204,7 +207,7 @@ await fetch(&#39;/my-backend/verify-plugin&#39;, {
 });
 </code></pre>
 <p>业务后端用此 <code>gps_</code> 令牌调用公开插件 API，并核对返回的 <code>appId</code> 等于自己的应用。令牌绑定应用、安装记录、当前身份、设备、权限与版本，默认 15 分钟有效。授权改变、卸载、下架、封禁、设备撤销或身份封禁会使请求被拒绝。浏览器调用还验证 <code>Origin</code>；服务端调用可以不发送 Origin。令牌仅应在可信后端和 TLS 连接使用。</p>
-<p><code>gpk_</code> 应用密钥只允许读取自己应用的事件，不能冒充用户、读取用户存储或调用钱包。密钥仅显示一次，服务端仅保存摘要；可以单独撤销。事件游标必须属于同一应用，按单调序号增量读取。</p>
+<p><code>gpk_</code> 应用密钥仅操作本应用的事件和已授权业务：创建/查询订单、发送/更新机器人卡片、发送/查询订阅通知、创建场景以及下载用户主动选择的附件。它不能冒充用户、替用户订阅、读取用户通用存储或调用钱包；具体权限和用户授权仍会逐次检查。完整接口见下方业务能力指南。密钥仅显示一次，服务端仅保存摘要；可以单独撤销。事件游标必须属于同一应用，按单调序号增量读取。</p>
 <h2 id="签名事件回调">签名事件回调</h2>
 <p>开发者中心设置 HTTP／HTTPS 地址并保存一次性显示的回调密钥。服务器需设置 <code>GPC_PLUGIN_WEBHOOK_KEY</code>，为 32 字节随机值的 Base64，用来加密落库回调密钥；该配置缺失时明确拒绝启用回调，不会落库明文。示例生成：<code>openssl rand -base64 32</code>。多 API 副本须使用同一密钥，并保留受限备份。</p>
 <p>回调事件包括 <code>release.approved</code>、<code>release.rejected</code>、<code>app.active</code>、<code>app.delisted</code>、<code>app.suspended</code>、<code>installation.authorized</code>、<code>installation.revoked</code>。安装事件包含安装 ID、版本与授权；只有授予 <code>group.context</code> 时才附带群 ID，不附带个人钱包或群成员列表。开发者审计中的安装操作者隐藏钱包地址，平台管理员保留完整审计。</p>
@@ -222,4 +225,101 @@ await fetch(&#39;/my-backend/verify-plugin&#39;, {
 node --test examples/plugin-vote/test/*.test.mjs
 </code></pre>
 <p>本地测试和模拟浏览器不代表真实用户钱包签名、真实付款、真机传感器或广告填充验收。市场代码的实施和验证记录另见仓库技术记录。</p>
+<h1 id="插件业务开放能力">插件业务开放能力</h1>
+<p>入口为 Wallet 个人中心「插件市场」。群管理者也可从群资料管理本群插件。添加插件及群机器人免费；个人 AI 助理免费使用。链上付款、创建群机器人合约或更新链上知识仍可能产生 BNB Gas。</p>
+<p>安装 <code>gpc-plugin-sdk.tgz</code>，浏览器使用 <code>@gpc/plugin-sdk</code>，Node.js 服务端使用 <code>@gpc/plugin-sdk/server</code>。服务端密钥 <code>gpk_</code> 仅存放在开发者后端；页面不能持有它。浏览器的短时 <code>gps_</code> 授权绑定应用、安装、身份和设备，不能代替 Wallet JWT。</p>
+<p>这五项业务能力由宿主 API 2 提供。页面先调用 <code>plugin.getCapabilities()</code>，检查 <code>apiVersion &gt;= 2</code> 及对应权限；旧宿主需要更新 Wallet。Node.js SDK 要求 Node.js 20+；可下载的完整业务示例使用 Node.js 22.13+ 内置 SQLite，包含收款对账、持久事件队列和卡片更新。</p>
+<h2 id="开发者后台与审核">开发者后台与审核</h2>
+<p>在应用版本中选择所需权限，并配置「开放能力配置」。机器人名称、指令、订阅事件、支付网络/收款地址/资产、通知主题均随不可变版本一起审核。变更配置须提交新版本；已安装用户保持原版本，主动更新并确认权限后才使用新配置。后台「业务运行记录」展示订单、卡片最新版本、通知投递和订阅状态；失败卡片或只留在收件箱的通知可重新投递。开发者只能查询自己应用的记录。</p>
+<p>示例 Manifest 扩展：</p>
+<pre><code class="language-json">{
+  &quot;permissions&quot;: [&quot;identity.login&quot;, &quot;group.context&quot;, &quot;bot.receive&quot;, &quot;bot.send&quot;, &quot;group.events&quot;, &quot;orders.pay&quot;, &quot;links.create&quot;],
+  &quot;optionalPermissions&quot;: [&quot;notifications.subscribe&quot;, &quot;files.choose&quot;, &quot;media.choose&quot;, &quot;camera.scan&quot;],
+  &quot;bot&quot;: {&quot;name&quot;:&quot;活动助手&quot;,&quot;commands&quot;:[&quot;/help&quot;],&quot;events&quot;:[&quot;command&quot;,&quot;button&quot;,&quot;member.joined&quot;,&quot;member.left&quot;]},
+  &quot;payments&quot;: {&quot;chainId&quot;:56,&quot;recipient&quot;:&quot;0x开发者收款地址&quot;,&quot;assets&quot;:[&quot;native&quot;,&quot;0x允许的ERC20代币地址&quot;]},
+  &quot;notificationTopics&quot;: [{&quot;id&quot;:&quot;order_status&quot;,&quot;name&quot;:&quot;订单进度&quot;,&quot;description&quot;:&quot;通知报名确认和活动时间变化&quot;}]
+}
+</code></pre>
+<p>完整 Manifest 仍需填写名称、三个地址页面、入口、图标、版本、分类、简介、方向和安装位置。<code>payments.assets</code> 的 <code>native</code> 是 BNB；金额使用最小单位的十进制整数字符串。订单 API 的配置网络支持 BSC 56/97，服务端必须连通对应网络 RPC；当前正式 Wallet 的付款网络为 BSC 主网 56，97 仅用于隔离开发联调，不能在正式 Wallet 中自动切换付款网络。</p>
+<h2 id="群机器人与可更新卡片">群机器人与可更新卡片</h2>
+<p>机器人由群主或管理员免费安装。只接收本群明确发给它的消息：<code>@活动助手 问题</code> 或 <code>/help@活动助手</code>。普通聊天、聊天历史和其他插件的消息不转交。成员变化仅通过已核验、达到 12 个区块确认的链上加入/移除日志产生，直接链上操作也能被索引；从授权时的链上位置开始，不补发授权之前的历史。索引游标持久化，重启和失败重试不丢失已确认的事件。</p>
+<p>用户在「我的插件 → 管理授权」可暂停机器人或单独关闭指令、按钮、成员加入和成员退出事件。授权取消后停止新投递；卸载后短时会话、机器人和待发提醒失效。机器人使用稳定、独立的宿主身份，不能冒用群成员。</p>
+<p>开发者服务端通过签名回调或事件轮询接收 <code>bot.command</code>、<code>bot.button</code>、<code>bot.member.joined</code>、<code>bot.member.left</code>。事件 <code>payload</code> 是 JSON 字符串，包含 <code>installationId</code>、<code>groupId</code>、应用内 <code>subject</code> 和稳定的 <code>botEventId</code>；指令含 <code>text</code>，按钮含 <code>messageId</code>、<code>buttonId</code>、<code>data</code>、<code>cardVersion</code>。</p>
+<pre><code class="language-js">import {createServerClient} from &#39;@gpc/plugin-sdk/server&#39;;
+const server = createServerClient({apiKey:process.env.GPC_PLUGIN_API_KEY});
+const card = await server.cards.send({
+  installationId, idempotencyKey:&#39;registration-created:873&#39;,
+  title:&#39;周末活动报名&#39;, text:&#39;请确认你的报名信息。&#39;, status:&#39;待确认&#39;,
+  buttons:[{id:&#39;confirm&#39;,label:&#39;确认报名&#39;,data:&#39;registration:873&#39;}]
+});
+const updated = await server.cards.update(card.id, {
+  idempotencyKey:&#39;registration-confirmed:873&#39;, expectedVersion:card.version,
+  text:&#39;你已成功报名，请准时参加。&#39;, status:&#39;已报名&#39;,
+  buttons:[{id:&#39;confirm&#39;,label:&#39;已完成&#39;,disabled:true}]
+});
+</code></pre>
+<p>更新接口是 <code>PATCH /api/plugins/open/bot-messages/{messageId}</code>，兼容 <code>POST .../{messageId}/update</code>。按需提交 <code>text</code>、<code>title</code>、<code>status</code>、<code>buttons</code>，未提交字段保留。<code>expectedVersion</code> 与幂等键必填，版本从 1 开始；同一消息更新后仍使用原 ID。<code>GET .../{messageId}</code> 查询最新内容和版本。</p>
+<p>旧版本更新返回 <code>409 CARD_VERSION_CONFLICT</code>。先重新查询，再由业务决定是否更新，不能盲目覆盖。相同幂等键与相同内容重试返回已执行结果；同键不同内容返回 <code>409 IDEMPOTENCY_CONFLICT</code>。按钮是整组替换；空数组关闭所有按钮。每个按钮可设 <code>disabled</code>，或配置 <code>sceneId</code> 跳转本应用场景。普通按钮回调必须匹配当前卡片版本，旧按钮或禁用按钮不能执行。客户端按递增版本替换消息，重连/打开历史时查询服务器最新卡片；投递重试不会重复插入消息。每个群安装每分钟最多 30 条新卡片；每应用每分钟最多 120 次更新，按钮最多 4 个。</p>
+<p>业务端仍需对 <code>event.id</code>、<code>botEventId</code> 和自己的报名/订单 ID 做事务幂等。收到按钮只表示用户提交动作；确认名额、履约和实际业务状态由开发者决定。</p>
+<h2 id="统一订单和付款核验">统一订单和付款核验</h2>
+<p>服务端创建订单，页面只能查看本人订单、唤起确认或取消未广播订单：</p>
+<pre><code class="language-js">// 插件页面：把短时授权交给自己的后端，订单金额由后端商品规则决定。
+const authorization = await plugin.getAuthorization();
+const response = await fetch(&#39;/api/orders&#39;, {
+  method:&#39;POST&#39;, headers:{&#39;Content-Type&#39;:&#39;application/json&#39;},
+  body:JSON.stringify({productId:&#39;ticket&#39;,customerAuthorization:authorization.token,requestId})
+});
+const order = await response.json();
+const submitted = await plugin.orders.pay(order.id);
+// submitted 通常处于 submitted；应展示「确认中」，最终 paid 由服务端回调确认。
+</code></pre>
+<pre><code class="language-js">// 开发者后端：勿直接采用页面传入的收款方、资产或价格。
+const order = await server.orders.create({
+  customerAuthorization,reference:&#39;merchant-order-873&#39;,title:&#39;活动票&#39;,
+  asset:&#39;native&#39;,amount:&#39;1000000000000000&#39;,expiresIn:900
+});
+</code></pre>
+<p>宿主先展示绑定订单/网络/资产/金额/收款方/付款钱包/有效期的 EIP-191 签名，再调用原有交易确认。签名不授予自动扣款权限。身份钱包可与付款钱包不同；签名验证确保实际付款钱包同意此订单。用户可以拒绝任一步骤。</p>
+<p>服务端读取可信 RPC 的实际交易、成功回执和规范区块，验证链 ID、付款钱包、收款地址、最小单位金额及转账调用；ERC20 还须有匹配的 Transfer 日志。达到 12 个区块确认后才置为 <code>paid</code>。收费代币、会扣除转账税或需要特殊转账过程的资产不受该直接转账订单支持。单个链上交易全局只能用于一个订单。不会根据客户端成功提示或单独提交的哈希发货。</p>
+<p>状态：<code>pending → prepared → submitted → paid/failed/expired</code>；未广播订单可 <code>cancelled</code>。订单有效期 60 秒至 24 小时，缺省 15 分钟；链上实际成交须在订单有效期内。提交交易后服务端持续核验，插件关闭不停止核验。广播后本地保留待提交哈希；再次调用 <code>orders.pay</code> 会先恢复该哈希，不重新付款。网络异常时应保持「确认中」，不能立刻让用户重复支付。</p>
+<p>若用户关闭页面或清理本机存储后只剩 <code>prepared</code>，宿主不会再次广播，避免不确定情况下重复付款。用户核实钱包交易记录后，可调用 <code>plugin.orders.submit(order.id, txHash)</code> 补交实际交易哈希；服务端仍执行相同的全套链上验证。已过期但在有效期内成交的已准备订单也可补交并核验。</p>
+<p>事件包括 <code>order.created</code>、<code>order.submitted</code>、<code>order.paid</code>、<code>order.failed</code>、<code>order.expired</code>、<code>order.cancelled</code>。开发者收到 <code>order.paid</code> 后应再次 <code>server.orders.get(id)</code> 校对自身业务记录和金额，以订单 ID 幂等履约。框架不托管资金、不自动退款、不执行奖励转账。</p>
+<h2 id="用户订阅通知">用户订阅通知</h2>
+<pre><code class="language-js">const topics = await plugin.notifications.topics();
+const subscription = await plugin.notifications.subscribe(&#39;order_status&#39;);
+// 宿主展示主题名称和用途，用户确认后才生效。
+await plugin.notifications.unsubscribe(&#39;order_status&#39;);
+</code></pre>
+<p>订阅成功产生 <code>notification.subscribed</code> 事件，后端记录其中的 <code>subscription.id</code> 与 <code>subject</code>。服务端密钥不能替用户订阅：</p>
+<pre><code class="language-js">await server.notifications.send({
+  subscriptionId,idempotencyKey:&#39;event-start:873&#39;,
+  title:&#39;活动即将开始&#39;,body:&#39;距离开始还有 15 分钟&#39;,sceneId,
+  deliverAt:Math.floor(Date.now()/1000)+60
+});
+</code></pre>
+<p>支持即时或未来 30 天内定时投递。同安装同用户每天最多 10 条，重复幂等请求不计新条目。消息先持久化；原生推送按设备保存回执并重试，推送不可用时保留在插件消息收件箱。原生推送只显示通用提醒，不在锁屏暴露业务正文。用户可在个人中心的插件市场查看消息，在授权管理取消各主题订阅；取消、撤权或卸载会取消尚未发送的任务。</p>
+<p><code>delivered</code> 表示推送提供方接受，不表示用户已阅读；<code>readAt</code> 表示用户在收件箱打开。系统层通知权限和设备的离线推送选择仍有效。</p>
+<h2 id="插件场景链接、分享和二维码">插件场景链接、分享和二维码</h2>
+<pre><code class="language-js">const link = await plugin.links.create({path:&#39;/events/873&#39;,params:{source:&#39;group&#39;},expiresIn:86400});
+await plugin.shareToGroup({title:&#39;周末活动&#39;,text:&#39;点开报名&#39;,url:link.url});
+const launch = await plugin.getLaunchContext();
+if (launch) showPage(launch.path,launch.params);
+</code></pre>
+<p>服务端也可调用 <code>server.links.create({path,params,expiresIn})</code> 创建公开场景。群场景还须提交当前有效、已授予 <code>links.create</code> 的 <code>installationId</code>，分享后仍按当前群成员身份校验。不要把公开场景参数当作用户授权。</p>
+<p>链接格式为 <code>https://download.gpcchat.com/share/plugin/{appId}?scene={sceneId}</code>，也可转换成应用协议 <code>gpc://share/plugin/{appId}?scene={sceneId}</code>。同一链接可生成标准二维码。App 链接路由、剪贴板识别、群卡片和扫一扫均识别该场景；市场会查验应用仍上架、场景有效。已有安装直接恢复指定场景；未安装者先查看详情并确认安装，随后恢复同一场景。群场景使用群内安装及当前成员权限。</p>
+<p>场景只包含逻辑页面路径和小型字符串参数，宿主继续加载审核后的准确入口 URL；参数不能把钱包导航到任意来源，也不能携带主 JWT 或私钥。场景最长 90 天，参数 JSON 最多 2 KB。公开场景链接可被转发，不能把订单读取授权或敏感信息放进参数中；业务页须另行验证登录身份。</p>
+<h2 id="扫码、文件与媒体">扫码、文件与媒体</h2>
+<pre><code class="language-js">const qrText = await plugin.camera.scan();
+const attachment = await plugin.files.choose({accept:[&#39;application/pdf&#39;,&#39;image/*&#39;]});
+const photo = await plugin.media.choose();
+// 仅把返回的附件 ID 交给自己的后端。
+const bytes = await server.files.download(attachment.id);
+</code></pre>
+<p>宿主显示当前插件的用途说明，由用户点击选择文件、图片/视频、拍照或开始扫码。相机使用系统权限与 Wallet 隐私同意，二维码在本机识别，只返回识别文本；取消使用标准 <code>4001</code>。文件选择不会暴露本机路径、相册目录或其他文件。</p>
+<p>文件最多 20 MB，同安装同用户有效附件最多 50 个、总计 100 MB，24 小时过期并清理。服务端检测 MIME、计算 SHA-256，返回不透明文件 ID、名称、大小、类型、摘要和有效期。下载须有该应用服务端密钥，或同安装同用户有效会话；卸载/撤权后禁止下载。下载强制附件和 nosniff，不能作为可执行页面嵌入。开发者需要长期保存时，在有效期内下载至自己的业务存储。</p>
+<p>自行部署 Wallet API 时，<code>GPC_PLUGIN_FILE_ROOT</code> 必须指向私有、持久化的专属目录；不能挂到公开上传目录或静态下载站。API 上传是带 Wallet 设备签名和插件短时会话的原始二进制请求，常规开发者通过 SDK 选择文件即可。</p>
+<h2 id="回调、错误与联调">回调、错误与联调</h2>
+<p>回调使用已有的加密密钥和持久化重试。通过 <code>X-GPC-Timestamp</code>、<code>X-GPC-Event-ID</code>、<code>X-GPC-Signature</code> 验证 <strong>原始请求字节</strong>；签名为 <code>HMAC-SHA256(secret, timestamp + &#39;.&#39; + eventId + &#39;.&#39; + rawBody)</code>。服务端 SDK 的 <code>verifyWebhook</code> 同时检查时间窗和常量时间签名。先把事件以唯一 ID 持久入库，再返回 2xx 并执行异步业务；不依赖单次内存回调，重试不可重复发货或重复报名。</p>
+<p>常见错误：<code>PERMISSION_NOT_GRANTED</code>、<code>PLUGIN_AUTHORIZATION_CHANGED</code>、<code>BOT_EVENT_DISABLED</code>、<code>CARD_VERSION_CONFLICT</code>、<code>IDEMPOTENCY_CONFLICT</code>、<code>ORDER_NOT_PAYABLE</code>、<code>PAYMENT_SIGNATURE_INVALID</code>、<code>TRANSACTION_ALREADY_USED</code>、<code>NOTIFICATION_NOT_SUBSCRIBED</code>、<code>PLUGIN_FILE_EXPIRED</code>。授权错误要求回到宿主重新确认；版本冲突先查询最新值；用户取消不自动重试付款或重新请求权限。</p>
+<p>本机测试应使用测试身份、测试网和隔离业务数据库。不要把服务端密钥嵌入 H5，不要把已广播交易视为已支付，不要在未订阅时反复申请推送。完整端点与参数见同目录 <code>plugin-market-openapi.json</code>。</p>
 </main></html>
