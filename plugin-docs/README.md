@@ -1,6 +1,6 @@
 # @gpc/plugin-sdk
 
-GPC 插件市场 SDK，支持注入 Provider 和网页宿主跨来源 iframe 桥接。
+GPC 插件市场 SDK，支持注入 Provider 和网页宿主跨来源 iframe／独立插件窗口桥接。HTTP 与 HTTPS 插件地址均支持，协议和端口分别绑定安装授权。
 
 ```js
 import { createPlugin } from '@gpc/plugin-sdk';

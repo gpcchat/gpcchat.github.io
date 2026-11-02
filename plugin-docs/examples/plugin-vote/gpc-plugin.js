@@ -5,7 +5,8 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
   function createFrameProvider() {
-    if (typeof window === "undefined" || window.parent === window)
+    var peer = typeof window !== "undefined" && (window.parent !== window ? window.parent : window.opener);
+    if (!peer)
       throw Object.assign(new Error("请在 GPC 安装并打开插件"), { code: 4200 });
     var pending = new Map(),
       next = 1,
@@ -15,7 +16,7 @@
     } catch (_) {}
     var receive = function (event) {
       if (
-        event.source !== window.parent ||
+        event.source !== peer ||
         (parentOrigin && event.origin !== parentOrigin)
       )
         return;
@@ -46,7 +47,10 @@
             reject: reject,
             timeout: timeout,
           });
-          window.parent.postMessage(
+          if (/^(eth_requestAccounts|eth_sendTransaction|eth_sign|personal_sign|wallet_|gpc_shareToGroup)/.test(args.method)) {
+            try { peer.focus(); } catch (_) {}
+          }
+          peer.postMessage(
             {
               type: "gpc-plugin:request",
               id: id,
@@ -73,7 +77,7 @@
       options.provider ||
       (typeof window !== "undefined" &&
       window.ethereum &&
-      (window.ethereum.isGPCWallet || window.parent === window)
+      (window.ethereum.isGPCWallet || (window.parent === window && !window.opener))
         ? window.ethereum
         : createFrameProvider());
     if (!provider || typeof provider.request !== "function")

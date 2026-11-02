@@ -1,12 +1,12 @@
 <!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GPC 插件市场 · 开发者文档</title><style>body{margin:0;background:#f5f7fa;color:#182a3a;font:16px/1.75 system-ui}main{max-width:960px;margin:auto;padding:36px 20px}h1,h2,h3{line-height:1.3;margin-top:2em}a{color:#176447}pre{background:#142331;color:#e8f3f8;padding:20px;border-radius:12px;overflow:auto}code{font-size:13px}table{display:block;overflow:auto;border-collapse:collapse}td,th{padding:10px;border:1px solid #dbe3e8;text-align:left}nav{display:flex;gap:18px;flex-wrap:wrap}h1{font-size:36px}</style><main><nav><a href="gpc-plugin-sdk.tgz">下载 SDK</a><a href="plugin-market-openapi.json">OpenAPI JSON</a><a href="examples/plugin-vote/index.html">示例页面</a><a href="https://api.gpcchat.com/console/plugin-developer">开发者中心</a></nav><h1 id="gpc-插件市场接入指南">GPC 插件市场接入指南</h1>
-<p>插件以独立 HTTPS 网页和业务后端运行。开发者使用 GPC SDK 调用宿主能力；用户将已审核的版本安装到个人应用，群主或管理员将插件安装到群菜单或聊天工具栏。插件内容由开发者托管，GPC 审核版本声明并执行权限边界。</p>
+<p>插件以独立 HTTP／HTTPS 网页和业务后端运行。开发者使用 GPC SDK 调用宿主能力；用户将已审核的版本安装到个人应用，群主或管理员将插件安装到群菜单或聊天工具栏。插件内容由开发者托管，GPC 审核版本声明并执行权限边界。</p>
 <h2 id="开发者中心与发布">开发者中心与发布</h2>
-<p>使用现有控制台账号登录 <code>/console/plugin-developer</code>，登记开发者名称、联系渠道并接受接入规范，然后创建插件。填写版本、名称、介绍、分类、图标、HTTPS 入口、隐私政策和支持地址，选择安装位置、必需权限、可选权限与屏幕方向，提交审核。</p>
+<p>使用现有控制台账号登录 <code>/console/plugin-developer</code>，登记开发者名称、联系渠道并接受接入规范，然后创建插件。填写版本、名称、介绍、分类、图标、HTTP／HTTPS 入口、隐私政策和支持地址，选择安装位置、必需权限、可选权限与屏幕方向，提交审核。</p>
 <p>版本使用 <code>主版本.次版本.修订号</code>，如 <code>1.2.3</code>。提交后的版本快照不可编辑，同一应用版本号不可重复。待审核和被拒绝版本不出现在公开市场。开发者可以查看审核意见、提交新版本、下架自己的应用、生成和撤销服务端密钥、设置事件回调、重试失败投递。</p>
 <p>管理员在 <code>/console/plugin-market</code> 查看版本声明，打开入口、隐私与支持页面，核对实际功能和权限后，通过并上架或填写原因拒绝。管理员可以推荐、下架、封禁和恢复应用。应用封禁不会因通过另一版本而自动解除。下架、封禁、审核和密钥变更保留审计记录。</p>
 <p>审核的是入口与权限等声明快照；远端网页由开发者运营，不等于 GPC 对远端每次文件更新做了代码完整性担保。更换入口、增减权限或改变重要行为应提交新版本。客户端始终以安装记录和实时授权限制宿主调用。</p>
 <h2 id="安装与授权">安装与授权</h2>
-<p>钱包发现页的“插件”提供搜索、分类、详情和已安装管理。群资料的“群插件”和群聊天工具栏提供群内入口。</p>
+<p>点击钱包消息页左上角头像进入个人中心，再打开“插件市场”，即可搜索、分类筛选、查看详情和管理已安装插件。群资料的“群插件”和群聊天工具栏提供群内入口。</p>
 <p>安装前展示开发者域名、版本、隐私政策、必需权限及可选权限。用户明确同意后才创建安装记录。群安装由服务端实时核对当前链上成员与管理角色；普通成员可以打开群已安装的插件，安装、更新或卸载需群主或管理员。个人安装只允许本人访问。</p>
 <p>安装固定到具体的已审核版本。市场发布更新不会自动扩展权限或改变既有安装；更新时重新展示权限并确认。卸载保留独立存档，再次安装可恢复；授权和旧会话立即失效。应用下架或封禁后不能继续获取宿主能力；恢复上架后旧会话仍不会复活，需要重新打开。</p>
 <h2 id="获取-sdk">获取 SDK</h2>
@@ -42,7 +42,8 @@ console.log(context.appId, context.version, context.permissions, context.group);
   &quot;orientation&quot;: &quot;portrait&quot;
 }
 </code></pre>
-<p>所有地址须为有效 HTTPS，无 URL 用户名密码。入口、图标、隐私政策与支持地址必填。不接受私网 IP、localhost 等本地来源。权限只能来自下表，必需与可选权限不能重复。安装位置为 <code>personal</code>、<code>group</code>、<code>chat_toolbar</code>，至少一个；方向为 <code>portrait</code> 或 <code>landscape</code>。</p>
+<p>所有地址支持公网 HTTP 和 HTTPS，无 URL 用户名密码。入口、图标、隐私政策与支持地址必填。不接受私网 IP、localhost 等本地来源。权限只能来自下表，必需与可选权限不能重复。安装位置为 <code>personal</code>、<code>group</code>、<code>chat_toolbar</code>，至少一个；方向为 <code>portrait</code> 或 <code>landscape</code>。</p>
+<p>HTTP 与 HTTPS 是不同来源，自定义端口也分别绑定授权；授权页显示实际协议、主机及端口。移动端在内置 WebView 打开两种地址。HTTPS 网页宿主按<a href="https://www.w3.org/TR/mixed-content/">浏览器混合内容规范</a>不能直接嵌入 HTTP 页面，因此会提示用户点击打开继承沙箱的独立插件窗口，继续使用同一安装授权及 SDK。HTTP 网页插件请使用随文档提供的 SDK 1.0.1 或更高版本；浏览器需允许插件窗口。该窗口不能导航钱包主页，关闭窗口或返回个人中心后停止桥接；全屏由浏览器自身管理。HTTP 传输为明文，插件图标加载失败时显示默认图标。</p>
 <table>
 <thead>
 <tr>
@@ -205,18 +206,18 @@ await fetch(&#39;/my-backend/verify-plugin&#39;, {
 <p>业务后端用此 <code>gps_</code> 令牌调用公开插件 API，并核对返回的 <code>appId</code> 等于自己的应用。令牌绑定应用、安装记录、当前身份、设备、权限与版本，默认 15 分钟有效。授权改变、卸载、下架、封禁、设备撤销或身份封禁会使请求被拒绝。浏览器调用还验证 <code>Origin</code>；服务端调用可以不发送 Origin。令牌仅应在可信后端和 TLS 连接使用。</p>
 <p><code>gpk_</code> 应用密钥只允许读取自己应用的事件，不能冒充用户、读取用户存储或调用钱包。密钥仅显示一次，服务端仅保存摘要；可以单独撤销。事件游标必须属于同一应用，按单调序号增量读取。</p>
 <h2 id="签名事件回调">签名事件回调</h2>
-<p>开发者中心设置 HTTPS 地址并保存一次性显示的回调密钥。服务器需设置 <code>GPC_PLUGIN_WEBHOOK_KEY</code>，为 32 字节随机值的 Base64，用来加密落库回调密钥；该配置缺失时明确拒绝启用回调，不会落库明文。示例生成：<code>openssl rand -base64 32</code>。多 API 副本须使用同一密钥，并保留受限备份。</p>
+<p>开发者中心设置 HTTP／HTTPS 地址并保存一次性显示的回调密钥。服务器需设置 <code>GPC_PLUGIN_WEBHOOK_KEY</code>，为 32 字节随机值的 Base64，用来加密落库回调密钥；该配置缺失时明确拒绝启用回调，不会落库明文。示例生成：<code>openssl rand -base64 32</code>。多 API 副本须使用同一密钥，并保留受限备份。</p>
 <p>回调事件包括 <code>release.approved</code>、<code>release.rejected</code>、<code>app.active</code>、<code>app.delisted</code>、<code>app.suspended</code>、<code>installation.authorized</code>、<code>installation.revoked</code>。安装事件包含安装 ID、版本与授权；只有授予 <code>group.context</code> 时才附带群 ID，不附带个人钱包或群成员列表。开发者审计中的安装操作者隐藏钱包地址，平台管理员保留完整审计。</p>
 <p>请求为 <code>POST</code> JSON，头包括 <code>X-GPC-Event-ID</code>、<code>X-GPC-Timestamp</code> 和 <code>X-GPC-Signature</code>。签名为：</p>
 <pre><code class="language-text">HMAC-SHA256(webhookSecret, timestamp + &quot;.&quot; + eventId + &quot;.&quot; + rawBody)
 </code></pre>
 <p>业务后端必须对原始请求字节验签，核对时间窗口及正文 ID／应用 ID，并按事件 ID 事务去重。成功入库或持久化入队后返回 2xx。事件 payload 字段是 JSON 字符串，验签后再解析。平台至少一次投递，失败按 5 秒起步指数退避，10 次后标记失败，可人工重试；副本通过数据库租约争抢，崩溃后可恢复。关闭回调时未投递记录标记暂停；重新启用后在投递列表选择重试。每次启用保存会轮换签名密钥。</p>
-<p>回调仅连接解析到公网的 HTTPS 地址，DNS 在实际连接时校验并固定 IP，禁止私网和跳转。开发者仍可用事件查询 API 补偿或对账。接收端示例见附带的 <code>examples/plugin-vote/server.mjs</code>。</p>
+<p>回调仅连接解析到公网的 HTTP／HTTPS 地址，DNS 在实际连接时校验并固定 IP，禁止私网和跳转。开发者仍可用事件查询 API 补偿或对账。接收端示例见附带的 <code>examples/plugin-vote/server.mjs</code>。</p>
 <h2 id="错误与兼容">错误与兼容</h2>
 <p>HTTP 返回 <code>{ success, data }</code> 或 <code>{ success:false, code, error }</code>。常见状态：400 参数无效，401 会话失效，403 未授权，404 不存在，409 版本或状态冲突，413 存储值过大，429 频控，503 依赖暂不可用。</p>
 <p>桥接保留 <code>4001</code> 用户取消、<code>4100</code> 未授权、<code>4200</code> 宿主不支持、<code>-32602</code> 参数错误。网络失败、超时和重试不能被当作支付或发奖成功。SDK 应显示可恢复状态，付款最终结果以链上确认及业务后端核验为准。</p>
 <h2 id="运行示例与验证">运行示例与验证</h2>
-<p>仓库 <code>examples/plugin-vote</code> 提供页面、声明、登录验证、插件令牌核对和原始字节回调验签示例；用自己的实际 HTTPS 地址替换示例域名后提交。<code>sdk/plugin</code> 同时提供源码、声明和独立测试，不依赖前端框架。</p>
+<p>仓库 <code>examples/plugin-vote</code> 提供页面、声明、登录验证、插件令牌核对和原始字节回调验签示例；用自己的实际 HTTP／HTTPS 地址替换示例域名后提交。<code>sdk/plugin</code> 同时提供源码、声明和独立测试，不依赖前端框架。</p>
 <pre><code class="language-sh">node --test sdk/plugin/test/*.test.cjs
 node --test examples/plugin-vote/test/*.test.mjs
 </code></pre>

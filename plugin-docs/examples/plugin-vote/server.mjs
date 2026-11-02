@@ -49,4 +49,4 @@ const server = http.createServer(async (req, res) => {
     json(404, { error: 'NOT_FOUND' });
   } catch (e) { json(400, { error: e.message || 'INVALID_REQUEST' }); }
 });
-server.listen(port, '127.0.0.1', () => console.log(`Plugin example listening on 127.0.0.1:${port}; configure HTTPS origin ${origin}`));
+server.listen(port, '127.0.0.1', () => console.log(`Plugin example listening on 127.0.0.1:${port}; configure HTTP/HTTPS origin ${origin}`));

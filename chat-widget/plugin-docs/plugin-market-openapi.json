@@ -7513,16 +7513,28 @@
             "type": "string"
           },
           "iconUrl": {
-            "type": "string"
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://",
+            "description": "公网 HTTP 或 HTTPS 地址"
           },
           "entryUrl": {
-            "type": "string"
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://",
+            "description": "公网 HTTP 或 HTTPS 地址"
           },
           "privacyUrl": {
-            "type": "string"
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://",
+            "description": "公网 HTTP 或 HTTPS 地址"
           },
           "supportUrl": {
-            "type": "string"
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://",
+            "description": "公网 HTTP 或 HTTPS 地址"
           },
           "permissions": {
             "type": "array",
