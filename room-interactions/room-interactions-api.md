@@ -1,0 +1,106 @@
+# 会议／直播互动读取 API
+
+本轮为本地实现，尚未发布到生产。API 用于外部工具读取已授权房间内容，不自动回复、发评论、送礼或合成声音。
+
+## 内容与权限
+
+直播的弹幕和评论来自同一条消息，以 `comment` 事件返回一次；外部工具可自行渲染为弹幕或评论。会议返回当前获准范围内的 `message`，包括文字和既有媒体描述。礼物沿用主 API 的业务记录，以 `gift` 返回。
+
+评论和会议消息留在该场选定节点，不复制到主服务。调用者需要 Wallet 登录 JWT、与该 JWT 绑定的设备签名密钥、当前房间节点 ID 和实际场次 UUID。读取工具应生成并注册自己的设备密钥，按既有 Wallet 登录流程绑定身份，无需导出手机密钥、资产钱包私钥或节点管理 API secret。
+
+主持人／主播可用另一个已注册设备的工具读取本场，不占 RTC 席位，也不替换手机的发布连接。其他直播设备须已获准进入；会议成员和分组范围沿用当前角色权限。
+
+钱包 JWT 获取节点短期凭证：
+
+```http
+GET /api/wallet/room-control/nodes/{nodeId}/credential
+Authorization: Bearer <wallet-jwt>
+```
+
+凭证含 `webSocketUrl`、`token` 和毫秒时间戳 `expiresAt`。SDK 会在到期前重新申请。评论读取地址为同一节点 HTTPS 域名下的 `/gpc-control/interactions`。
+
+## 评论／会议消息
+
+```http
+POST https://<selected-node>:<port>/gpc-control/interactions
+Authorization: Bearer <node-credential-token>
+Content-Type: application/json
+```
+
+请求复用房间控制协议的设备签名外层：
+
+```json
+{
+  "requestId": "uuid",
+  "kind": "live",
+  "roomId": "本场 UUID",
+  "action": "interactions-list",
+  "body": "{\"after\":\"\",\"limit\":50}",
+  "timestamp": "Unix 秒",
+  "nonce": "64 位随机十六进制字符串",
+  "signature": "设备 EIP-191 签名"
+}
+```
+
+签名原文为以下各行拼接；body hash 为 `body` 字符串的 UTF-8 SHA-256，不含 `0x`。nonce 每次必须重新生成。
+
+```text
+gpcwallet-request:v2
+wallet:<小写身份地址>
+device:<登录绑定的 deviceId>
+method:POST
+target:/gpc-control/v1/<live或meeting>/<roomId>/interactions-list
+body-sha256:<小写 SHA-256>
+timestamp:<Unix 秒>
+nonce:<随机 nonce>
+```
+
+`body` 支持 `after`、`limit`（1–100，默认 50）以及会议的可选 `scope`。HTTP 入口只允许 `interactions-list`；不能借此发送消息、管理房间或修改权限。也可在既有控制 WebSocket 上发送同一 action。
+
+成功响应：
+
+```json
+{
+  "requestId": "原请求 UUID",
+  "status": 200,
+  "data": {
+    "events": [{"id":"comment:消息编号","type":"comment","at":1800000000000,"data":{"text":"你好","sender":"0x…","senderNickname":"昵称","sentAt":1800000000000}}],
+    "nextCursor": "comment:消息编号",
+    "hasMore": false,
+    "cursorExpired": false
+  }
+}
+```
+
+## 礼物
+
+```http
+GET /api/wallet/live/rooms/{roomId}/gift-events?after=<cursor>&limit=50
+Authorization: Bearer <wallet-jwt>
+```
+
+响应为 `{success:true,data:{events,nextCursor,hasMore,cursorExpired}}`，事件 `type` 为 `gift`。`data.gift` 包含礼物 ID、数量、发送者、GPC 基础单位金额及交易哈希。该接口保留现有客户端报送记录的语义，`data.paymentVerification` 为 `reported`；不能单凭该字段发放资金或奖励。财务用途应核验链上交易与礼物合约事件。历史记录没有服务端发生时间时，`at` 为 0。
+
+## 增量读取与恢复
+
+- 分别保存消息和礼物的 `nextCursor`，下一次作为 `after`。按事件 `id` 幂等消费，游标原样保存，不把不同房间或不同流的游标混用。
+- `hasMore=true` 时继续翻页；追上后建议每 2 秒轮询。接口保留当前房间的有限历史，不是无限期消息归档。
+- `cursorExpired=true` 表示旧游标已经超出保留窗口，返回当前可取历史；调用者应标记可能的缺口并去重，不能假设没有漏消息。
+- 评论／会内消息在房间结束或失去权限后拒绝继续读取；礼物沿用已有历史查询权限。
+
+可直接使用 [JavaScript 客户端](../../sdk/room-interactions/index.mjs)：
+
+```js
+import { RoomInteractionsClient } from './sdk/room-interactions/index.mjs';
+const reader = new RoomInteractionsClient({
+  apiBase: 'https://<api-host>/api', identity, deviceId, signer: deviceSigner,
+  getWalletToken: async () => walletJwt, nodeId, kind: 'live', roomId,
+});
+let cursor = {};
+const page = await reader.read(cursor);
+for (const event of page.events) consumeIdempotently(event.id, event);
+cursor = page.cursor;
+// 持久化 cursor，再安排下一轮读取；不要在未提交消费结果时推进游标。
+```
+
+发布需同时包含新版 API、节点控制进程及入口路由。读取工具仅取得对应设备的房间权限，不能使用匿名公开凭证遍历所有房间。
